@@ -19,7 +19,8 @@ Install stuff:
 
 ```{r, eval = FALSE}
 devtools::install_github("einarhjorleifsson/smxapp",
-                         dependencies = FALSE)
+                         dependencies = FALSE,
+                         build_vignettes = TRUE)
 devtools::install_github("fishvice/xe", 
                          dependencies = FALSE, 
                          build_vignettes = TRUE)
@@ -34,6 +35,8 @@ And for the smxapp-package via:
 ```{r, eval = FALSE}
 browseVignettes(package = "smxapp")
 ```
+
+You can obtain some minimum files to load into Hafvog at ftp://ftp.hafro.is/pub/reiknid/einar/hafvog
 
 For the smx app you could do:
 ```{r, eval = FALSE}

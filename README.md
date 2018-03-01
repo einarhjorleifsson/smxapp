@@ -1,12 +1,25 @@
 Install stuff:
 
     devtools::install_github("einarhjorleifsson/smxapp",
-                             dependencies = FALSE)
+                             dependencies = FALSE,
+                             build_vignettes = TRUE)
     devtools::install_github("fishvice/xe", 
                              dependencies = FALSE, 
                              build_vignettes = TRUE)
 
-Then:
+Some minimum information on the xe-package you can get via:
+
+    browseVignettes(package = "xe")
+
+And for the smxapp-package via (actually contains the same stuff as this
+README):
+
+    browseVignettes(package = "smxapp")
+
+You can obtain some minimum files to load into Hafvog at
+<ftp://ftp.hafro.is/pub/reiknid/einar/hafvog>
+
+For the smx app you could do:
 
     library(tidyverse)
     library(lubridate)
