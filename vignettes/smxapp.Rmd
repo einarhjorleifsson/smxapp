@@ -1,10 +1,18 @@
 ---
 title: "smxapp"
-output: md_document
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{smxapp}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
 ---
 
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
 ```
 
 Install stuff:
@@ -17,9 +25,14 @@ devtools::install_github("fishvice/xe",
                          build_vignettes = TRUE)
 ```
 
-Some minimum information on the xe-package you can get via (actually contains the same stuff as this README):
+Some minimum information on the xe-package you can get via:
 ```{r, eval = FALSE}
 browseVignettes(package = "xe")
+```
+
+And for the smxapp-package via:
+```{r, eval = FALSE}
+browseVignettes(package = "smxapp")
 ```
 
 For the smx app you could do:
@@ -39,4 +52,3 @@ Once done go:
 
 * File -> New file -> Rmarkdown... -> From Template --> smx dashboard
 * Press Run Document
-
