@@ -1,0 +1,489 @@
+---
+title: "Mælaborð hins íslenzka vorralls"
+output: flexdashboard::flex_dashboard
+runtime: shiny
+---
+
+```{r, eval = FALSE}
+#devtools::install_github("fishvice/xe",  dependencies = FALSE, args='--no-multiarch', force = TRUE, build)
+library(tidyverse)
+library(lubridate)
+library(sp)
+library(ROracle)
+library(xe)
+con <- connect_xe()
+Cruise <- c("A4-2018", "TL1-2018")
+import_smx(con, cruise = Cruise)
+```
+
+```{r global, include=FALSE}
+# load data in 'global' chunk so it can be shared by all users of the dashboard
+library(sp)
+library(tidyverse)
+library(ggrepel)
+library(leaflet)
+library(htmltools)
+library(DT)
+Cruise <- c("A4-2018", "TL1-2018")
+load("data2/smb_dashboard.rda")
+
+Tegund <- sort(unique(by.tegund.lengd.ar$tegund))
+x <- 
+  fisktegundir %>% 
+  filter(tegund %in% Tegund) %>% 
+  mutate(val = paste(tegund, heiti)) %>% 
+  select(tegund, val)
+my.list <- as.list(x$tegund)
+names(my.list) <- x$val
+
+```
+
+Sidebar {.sidebar data-width=175}
+=====================================
+
+```{r}
+selectInput(inputId = "Species", label = "Tegund:",
+            choices = my.list, selected = 1)
+
+
+radioButtons(inputId = "Type", label = "Val:", 
+             choices = list("Numbers", "Weight"),
+             selected = list("Numbers"))
+```
+
+
+Síðast uppfært: `r as.character(timi)`
+
+Dót til prufu - um kóðann sem er á bak við má fræðast um nánar [hér](http://www.hafro.is/~einarhj/gagnakvorn).
+
+Forsíða
+=====================================  
+
+Column 
+-------------------------------------
+
+### Eftir lengd
+
+
+```{r}
+renderPlot({
+  if(input$Type == "Numbers") 
+    {
+  ggplot() +
+      theme_grey(base_size = 16) +
+    geom_ribbon(data = by.tegund.lengd.ar.m %>% 
+                  filter(tegund == as.numeric(input$Species)),
+                aes(lengd, ymax = n.std, ymin = 0), fill = "grey") +
+    geom_line(data = by.tegund.lengd.ar  %>% 
+                filter(tegund == as.numeric(input$Species),
+                       ar >= 2010),
+              aes(lengd, n.std)) +
+    facet_grid(ar ~ .) +
+    labs(x = NULL, y = "Fjöldi í hverju lengdarbili")
+  } else {
+    ggplot() +
+      theme_grey(base_size = 16) +
+      geom_ribbon(data = by.tegund.lengd.ar.m %>% 
+                    filter(tegund == as.numeric(input$Species)),
+                  aes(lengd, ymax = b.std, ymin = 0), fill = "grey") +
+      geom_line(data = by.tegund.lengd.ar  %>% 
+                  filter(tegund == as.numeric(input$Species),
+                         ar >= 2010),
+                aes(lengd, b.std)) +
+      facet_grid(ar ~ .) +
+      labs(x = NULL, y = "Þyngd [kg] í hverju lengdarbili")
+  } 
+  
+})
+```
+
+
+Column 
+-------------------------------------
+
+### Meðalafli - hártogun með staðalvikmörkum
+
+
+```{r}
+renderPlot({
+  if(input$Type == "Numbers") 
+  {
+    by.station.boot %>% 
+      filter(tegund == as.numeric(input$Species),
+             variable == "n") %>% 
+      ggplot(aes(ar, n.std)) +
+      theme_grey(base_size = 16) +
+      geom_pointrange(aes(ar, mean, ymin = lower.ci, ymax = upper.ci)) +
+      #geom_text(data = x, aes(ar, y = -5, label = n), angle = 90) +
+      scale_x_continuous(breaks = seq(1985, 2015, by = 5)) +
+      #expand_limits(y = 0) +
+      labs(x = NULL, y = NULL)
+  } else {
+    by.station.boot %>% 
+      filter(tegund == as.numeric(input$Species),
+             variable == "b") %>% 
+      ggplot(aes(ar, b.std)) +
+      theme_grey(base_size = 16) +
+      geom_pointrange(aes(ar, mean, ymin = lower.ci, ymax = upper.ci)) +
+      scale_x_continuous(breaks = seq(1985, 2015, by = 5)) +
+      expand_limits(y = 0) +
+      labs(x = NULL, y = NULL)
+  }
+})
+```
+
+
+### Afli í staðaltogi árið 2018
+
+
+```{r}
+renderLeaflet({
+  
+  x0 <- by.station %>% filter(ar == 2018) %>% select(lon, lat) %>% distinct()
+  if(input$Type == "Numbers") {
+    x <- 
+      by.station %>% 
+      filter(ar == 2018,
+             tegund == as.numeric(input$Species),
+             n.std > 0) %>% 
+      select(lon, lat, n.std) %>% 
+      arrange(-n.std)
+    skali <- sqrt(max(x$n.std))
+    leaflet(x) %>% 
+      addTiles() %>% 
+      #addTiles(urlTemplate = "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
+      #     group = "Hn?ttur",
+      #     attribution = 'Data source: <a href="https://www.hafogvatn.is">Marine Rearch Institute</a>') %>% 
+      addCircles(data = x0, weight = 0.5, color = "white") %>% 
+      addCircles(weight = 1,
+                 popup = ~paste(n.std, "fiskar"),
+                 radius = ~sqrt(n.std)/skali * 5e4,
+                 color = "red")
+  } else {
+    x <- 
+      by.station %>% 
+      filter(ar == 2018,
+             b.std > 0,
+             tegund == as.numeric(input$Species)) %>% 
+      select(lon, lat, b.std) %>% 
+      arrange(-b.std)
+    skali <- sqrt(max(x$b.std))
+    leaflet(x) %>% 
+      addTiles() %>% 
+      #addTiles(urlTemplate = "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
+      #     group = "Hn?ttur",
+      #     attribution = 'Data source: <a href="https://www.hafogvatn.is">Marine Rearch Institute</a>') %>% 
+      addCircles(data = x0, weight = 0.5, color = "white") %>% 
+      addCircles(weight = 1,
+                 popup = ~paste(round(b.std), "kg"),
+                 radius = ~sqrt(b.std)/skali * 5e4,
+                 color = "red")
+  }
+})
+```
+
+Dreifing
+=====================================
+
+### Afli í togi
+    
+```{r}
+renderPlot({
+  if(input$Type == "Numbers") {
+    by.station %>% 
+      filter(ar %in% c(1985, 1990, 1995, 2000, seq(2005, 2015, by = 2), 2017, 2018),
+             tegund == as.numeric(input$Species)) %>% 
+      ggplot() +
+      theme_grey(base_size = 16) +
+      geom_path(data = geo::island, aes(lon, lat)) +
+      geom_point(aes(lon, lat, size = n.std),
+                 alpha = 0.5, colour = "red") +
+      scale_size_area(max_size = 10) +
+      coord_quickmap(xlim = range(by.station$lon, na.rm = TRUE),
+                     ylim = range(by.station$lat, na.rm = TRUE)) +
+      theme(legend.position = c(0.5, 0.6)) +
+      labs(x = NULL, y = NULL, size = "Fj?ldi") +
+      facet_wrap(~ ar, nrow = 3)
+  } else {
+    by.station %>% 
+      filter(ar %in% c(1985, 1990, 1995, 2000, seq(2005, 2015, by = 2), 2017, 2018),
+             tegund == as.numeric(input$Species)) %>% 
+      ggplot() +
+      theme_grey(base_size = 16) +
+      geom_path(data = geo::island, aes(lon, lat)) +
+      geom_point(aes(lon, lat, size = b.std),
+                 alpha = 0.5, colour = "red") +
+      scale_size_area(max_size = 10) +
+      coord_quickmap(xlim = range(by.station$lon, na.rm = TRUE),
+                     ylim = range(by.station$lat, na.rm = TRUE)) +
+      theme(legend.position = c(0.5, 0.6)) +
+      labs(x = NULL, y = NULL, size = "kg") +
+      facet_wrap(~ ar, nrow = 3)
+  }
+})
+```
+
+
+Vikmörk-myndir
+=====================================
+
+
+Column {.tabset}
+-------------------------------------
+    
+### Lengd-óslægt
+    
+```{r}
+renderPlot({
+  d <- 
+    kv.this.year %>%
+    filter(tegund == as.numeric(input$Species))
+  p <- 
+    ggplot() +
+    theme_grey(base_size = 16) +
+    geom_ribbon(data = stadlar.lw %>% filter(tegund == as.numeric(input$Species)),
+                aes(lengd, ymin = osl1, ymax = osl2),
+                fill = "pink") +
+    geom_point(data = d %>% filter(ok.osl), aes(lengd, oslaegt), size = 1, alpha = 0.5, colour = "blue") +
+    geom_point(data = d %>% filter(!ok.osl), aes(lengd, oslaegt), colour = "red") +
+    geom_text_repel(data = d %>% filter(!ok.osl), aes(lengd, oslaegt, label = lab)) +
+    scale_x_log10(breaks = c(seq(5, 50, by = 5), seq(60, 100, by = 10), 120, 140, 160, 200), lim = range(d$lengd, na.rm = TRUE)) +
+    scale_y_log10(breaks = c(seq(5, 50, by = 5),
+                             seq(60, 100, by = 10),
+                             seq(120, 200, by = 20),
+                             seq(300, 1000, by = 100),
+                             seq(1500, 10000, by = 500),
+                             seq(15000, 30000, by = 1000)),
+                  lim = range(d$oslaegt, na.rm = TRUE))
+  p
+  #ggplotly(p)
+})
+```
+
+### Lengd-slægt
+
+```{r}
+renderPlot({
+  d <- 
+    kv.this.year %>% 
+    filter(tegund == as.numeric(input$Species)) #%>% 
+  p <- 
+    ggplot() +
+    theme_grey(base_size = 16) +
+    geom_ribbon(data = stadlar.lw %>% filter(tegund == as.numeric(input$Species)),
+                aes(lengd, ymin = sl1, ymax = sl2),
+                fill = "pink") +
+    geom_point(data = d %>% filter(ok.sl), aes(lengd, slaegt), size = 1, alpha = 0.5, colour = "blue") +
+    geom_point(data = d %>% filter(!ok.sl), aes(lengd, slaegt), colour = "red") +
+    geom_text_repel(data = d %>% filter(!ok.sl), aes(lengd, slaegt, label = lab)) +
+    scale_x_log10(breaks = c(5, 10, 15, 30, 60, 100), lim = range(d$lengd, na.rm = TRUE)) +
+    scale_y_log10(breaks = c(5, 25, 250, 500, 1000, 5000, 10000), lim = range(d$slaegt, na.rm = TRUE))
+  p
+})
+```
+
+### Lengd-slægt/óslægt
+
+```{r}
+renderPlot({
+  stadlar <- 
+    stadlar.tegundir %>% 
+    filter(tegund == as.numeric(input$Species))
+  d <- 
+    kv.this.year %>% 
+    filter(tegund == as.numeric(input$Species))
+  p <- 
+    ggplot() +
+    theme_grey(base_size = 16) +
+    geom_hline(yintercept = 1, colour = "red", lwd = 2) +
+    geom_rect(data = stadlar,
+                aes(xmin = -Inf, xmax = Inf, ymin = oslaegt_slaegt_low, ymax = oslaegt_slaegt_high),
+                fill = "pink") +
+    geom_point(data = d %>% filter(ok.sl.osl), aes(lengd, slaegt/oslaegt), size = 1, alpha = 0.5, colour = "blue") +
+    geom_point(data = d %>% filter(!ok.sl.osl), aes(lengd, slaegt/oslaegt), colour = "red") +
+    geom_text_repel(data = d %>% filter(!ok.sl.osl), aes(lengd, slaegt/oslaegt, label = lab))
+  p
+})
+```
+
+### Lengd-lifur/óslaegt
+
+```{r}
+renderPlot({
+  d <- 
+    kv.this.year %>% 
+    filter(tegund == as.numeric(input$Species))
+  p <- 
+    ggplot() +
+    theme_grey(base_size = 16) +
+    #geom_hline(yintercept = 1, colour = "red", lwd = 2) +
+    geom_rect(data = stadlar.tegundir %>% filter(tegund == as.numeric(input$Species)),
+                aes(xmin = -Inf, xmax = Inf, ymin = lifur_low, ymax = lifur_high),
+                fill = "pink") +
+    geom_point(data = d %>% filter(ok.lifur.osl), aes(lengd, lifur/oslaegt), size = 1, alpha = 0.5, colour = "blue") +
+    geom_point(data = d %>% filter(!ok.lifur.osl), aes(lengd, lifur/oslaegt), colour = "red") +
+    geom_text_repel(data = d %>% filter(!ok.lifur.osl), aes(lengd, lifur/oslaegt, label = lab))
+  p
+})
+```
+
+### Lengd-kynkirtlar/óslaegt
+
+```{r}
+renderPlot({
+  d <- 
+    kv.this.year %>% 
+    filter(tegund == as.numeric(input$Species))
+  p <- 
+    ggplot() +
+    theme_grey(base_size = 16) +
+    #geom_hline(yintercept = 1, colour = "red", lwd = 2) +
+    geom_rect(data = stadlar.tegundir %>% filter(tegund == as.numeric(input$Species)),
+                aes(xmin = -Inf, xmax = Inf, ymin = kynkirtlar_low, ymax = kynkirtlar_high),
+                fill = "pink") +
+    geom_point(data = d %>% filter(ok.kirtlar.osl), aes(lengd, kynfaeri/oslaegt), size = 1, alpha = 0.5, colour = "blue") +
+    geom_point(data = d %>% filter(!ok.kirtlar.osl), aes(lengd, kynfaeri/oslaegt), colour = "red") +
+    geom_text_repel(data = d %>% filter(!ok.kirtlar.osl), aes(lengd, kynfaeri/oslaegt, label = lab))
+  p
+})
+```
+
+Vikm?rk-tafla
+=====================================
+
+Column
+-------------------------------------
+
+### Mælingar utan vikmarka
+
+```{r}
+DT::renderDataTable({
+  d <- 
+    kv.this.year %>% 
+    filter(tegund == as.numeric(input$Species),
+           (!ok.osl | !ok.sl | !ok.sl.osl | !ok.kirtlar.osl | !ok.lifur.osl | !ok.magir.osl)) %>%
+    select(index, nr, lengd, oslaegt, slaegt, kynfaeri, lifur, magi, ok.osl:ok.lifur.osl, ok.magi.osl = ok.magir.osl)
+  d %>% 
+    DT::datatable(extensions = 'Scroller',
+                  rownames = FALSE,
+                  options = list(deferRender = TRUE,
+                                 scrollY = 700,
+                                 scroller = TRUE
+                  )) %>% 
+    formatStyle('ok.osl', backgroundColor = styleEqual(c(0, 1), c('pink', '#C1FAAD'))) %>% 
+    formatStyle('ok.sl', backgroundColor = styleEqual(c(0, 1), c('pink', '#C1FAAD'))) %>% 
+    formatStyle('ok.sl.osl', backgroundColor = styleEqual(c(0, 1), c('pink', '#C1FAAD'))) %>% 
+    formatStyle('ok.kirtlar.osl', backgroundColor = styleEqual(c(0, 1), c('pink', '#C1FAAD'))) %>% 
+    formatStyle('ok.lifur.osl', backgroundColor = styleEqual(c(0, 1), c('pink', '#C1FAAD'))) %>% 
+    formatStyle('ok.magi.osl', backgroundColor = styleEqual(c(0, 1), c('pink', '#C1FAAD')))
+})
+```
+
+
+Tog
+=====================================
+
+Column
+-------------------------------------
+
+### Lárétt opnum - síðustu 40 stöðvar
+
+```{r}
+last.10 <- 
+  st %>% 
+  filter(leidangur %in% Cruise,
+         index %in% index.done) %>% 
+  arrange(-stod) %>% 
+  slice(1:40) %>% 
+  arrange(togbyrjun) %>% 
+  select(index) %>% 
+  mutate(id = 1:n())
+d <-
+  last.10 %>% 
+  left_join(st) #%>% 
+  #filter(ar >= 2010)
+
+d2 <-
+  d %>% 
+  mutate(ar2 = factor(ar))
+
+d2 %>% 
+  ggplot(aes(reorder(index, id), larett_opnun)) +
+  geom_violin(scale = "width", colour = "grey") +
+  geom_point(data = d2 %>% filter(ar >= 2014), aes(colour = ar2, group = ar2)) +
+  geom_line(data = d2 %>% filter(ar >= 2014), aes(colour = ar2, group = ar2), lwd = 1) +
+  scale_colour_brewer(palette = "Set1") +
+  labs(x = "Reitur-tognúmer", y = "Lárétt opnun", colour = "?r") +
+  coord_flip()
+```
+
+Column
+-------------------------------------
+
+### Lóðrétt opnum - siðustu 40 stöðvar
+
+```{r}
+last.10 <- 
+  st %>% 
+  filter(leidangur %in% Cruise,
+         index %in% index.done) %>% 
+  arrange(-stod) %>% 
+  slice(1:40) %>% 
+  arrange(togbyrjun) %>% 
+  select(index) %>% 
+  mutate(id = 1:n())
+d <-
+  last.10 %>% 
+  left_join(st) #%>% 
+  #filter(ar >= 2010)
+
+d2 <-
+  d %>% 
+  mutate(ar2 = factor(ar))
+
+d2 %>% 
+  ggplot(aes(reorder(index, id), lodrett_opnun)) +
+  geom_violin(scale = "width", colour = "grey") +
+  geom_point(data = d2 %>% filter(ar >= 2014), aes(colour = ar2, group = ar2)) +
+  geom_line(data = d2 %>% filter(ar >= 2014), aes(colour = ar2, group = ar2), lwd = 1) +
+  scale_colour_brewer(palette = "Set1") +
+  labs(x = "Reitur-tognúmer", y = "Lóðrétt opnun", colour = "?r") +
+  coord_flip()
+```
+
+
+
+Surf and turf
+=====================================
+
+### Togfar
+
+```{r}
+
+renderLeaflet({
+  p <-
+    leaflet(stadlar.rallstodvar.sp) %>% 
+    addTiles() %>% 
+    addPolylines(color = "red", weight = 10)
+  years <- as.character(2018:2015)
+  for(i in 1:length(years)) {
+    
+    if(i == 1) {
+      p <-
+      p %>% 
+      addPolylines(data = st.done.sp[st.done.sp$ar == years[i],],
+                   group = years[i],
+                   label = ~htmlEscape(as.character(synis_id)))
+    } else {
+      p <-
+      p %>% 
+      addPolylines(data = st.done.sp[st.done.sp$ar == years[i],],
+                   group = years[i])
+    }
+  }
+  p %>% 
+    addLayersControl(overlayGroups = years,
+                   options = layersControlOptions(collapsed = FALSE))
+})
+```
+
