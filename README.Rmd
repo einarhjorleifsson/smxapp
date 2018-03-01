@@ -1,8 +1,6 @@
 ---
 title: "smxapp"
-output: 
-  html_document: 
-    keep_md: yes
+output: md_document
 ---
 
 ```{r setup, include=FALSE}
@@ -15,8 +13,8 @@ Install stuff:
 devtools::install_github("einarhjorleifsson/smxapp",
                          dependencies = FALSE)
 devtools::install_github("fishvice/xe", 
-                         dependencies = FALSE,
-                         args='--no-multiarch')
+                         dependencies = FALSE, 
+                         build_vignettes = TRUE)
 ```
 
 Then:
