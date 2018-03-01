@@ -5,12 +5,13 @@ output:
     keep_md: yes
 ---
 
-
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
 
 Install stuff:
 
-
-```r
+```{r, eval = FALSE}
 devtools::install_github("einarhjorleifsson/smxapp",
                          dependencies = FALSE)
 devtools::install_github("fishvice/xe", 
@@ -19,8 +20,7 @@ devtools::install_github("fishvice/xe",
 ```
 
 Then:
-
-```r
+```{r, eval = FALSE}
 library(tidyverse)
 library(lubridate)
 library(sp)
