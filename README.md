@@ -28,11 +28,14 @@ For the smx app you could do:
     library(xe)
     library(smxapp)
     con <- connect_xe()
-    Cruise <- c("A4-2018", "TL1-2018") # or whatever smb cruise you have in Hafvog
-    import_smx(con, cruise = Cruise)
+    res <- import_smx(con)
+    export_for_smxapp(con, res, cruise = c("A4-2018", "TL1-2018", "TH1-2018", "B3-2018"))
 
 Once done go:
 
 -   File -&gt; New file -&gt; Rmarkdown... -&gt; From Template --&gt;
     smx dashboard
--   Press Run Document
+-   Press Run Document, save it in the root directory of the project
+
+You may get some error messages along the way - most likely associated
+with not having some packages installed.
