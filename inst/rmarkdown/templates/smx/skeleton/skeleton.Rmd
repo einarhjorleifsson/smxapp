@@ -12,8 +12,8 @@ library(sp)
 library(ROracle)
 library(xe)
 con <- connect_xe()
-Cruise <- c("A4-2018", "TL1-2018")
-import_smx(con, cruise = Cruise)
+res <- import_smx(con)
+export_for_smxapp(con, res, cruise = c("A4-2018", "TL1-2018", "TH1-2018", "B3-2018"))
 ```
 
 ```{r global, include=FALSE}
@@ -24,7 +24,6 @@ library(ggrepel)
 library(leaflet)
 library(htmltools)
 library(DT)
-Cruise <- c("A4-2018", "TL1-2018")
 load("data2/smb_dashboard.rda")
 
 Tegund <- sort(unique(by.tegund.lengd.ar$tegund))
@@ -391,8 +390,7 @@ Column
 ```{r}
 last.10 <- 
   st %>% 
-  filter(leidangur %in% Cruise,
-         index %in% index.done) %>% 
+  filter(index %in% index.done) %>% 
   arrange(-stod) %>% 
   slice(1:40) %>% 
   arrange(togbyrjun) %>% 
@@ -425,8 +423,7 @@ Column
 ```{r}
 last.10 <- 
   st %>% 
-  filter(leidangur %in% Cruise,
-         index %in% index.done) %>% 
+  filter(index %in% index.done) %>% 
   arrange(-stod) %>% 
   slice(1:40) %>% 
   arrange(togbyrjun) %>% 
