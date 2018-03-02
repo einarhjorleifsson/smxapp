@@ -1,7 +1,7 @@
 Package: smxapp
 Type: Package
 Title: A template drial
-Version: 0.0.1.9000
+Version: 0.0.1.9001
 Date: 2018-03-01
 Authors@R:
   c(person("Einar", "Hjorleifsson", email = "einarhjorleifsson@gmail.com",role = c("aut", "cre")))
