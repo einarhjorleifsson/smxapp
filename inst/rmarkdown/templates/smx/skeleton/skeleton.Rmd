@@ -5,7 +5,12 @@ runtime: shiny
 ---
 
 ```{r, eval = FALSE}
-#devtools::install_github("fishvice/xe",  dependencies = FALSE, args='--no-multiarch', force = TRUE, build)
+# NOTE: In the line above it says eval = FALSE. This means that when you 
+#       "Run Document" this code chunk will not be executed
+#       
+#       You only want to run the code if you have added more tows to Hafvog,
+#       or if new versions of xe- and smxapp-packages have been made (will
+#       inform the smb2018 cruise leader when that occurs via e-mail).
 library(tidyverse)
 library(lubridate)
 library(sp)
@@ -13,11 +18,20 @@ library(ROracle)
 library(xe)
 con <- connect_xe()
 res <- import_smx(con)
-export_for_smxapp(con, res, cruise = c("A4-2018", "TL1-2018", "TH1-2018", "B3-2018"))
+# Note, from the above code we could proceed with scutinizing the data. The object
+#   res is a list that contains res$st, res$nu, res$le, res$kv of all the past 
+#   spring survey tows and then the current one that reside in Hafvog
+#
+#   If you are only interested in using the smxapp the next step does some
+#   standardization of data, bootsrapping and other things
+#   The function ends by generating a data-binary file (data2/smb_dashboard.rda)
+#   that is loaded (see load("data2/smb_dashboard.rda") in the next chunk
+#   when the "Run Document" is pressed
+library(smxapp)
+munge_for_smxapp(con, res, cruise = c("A4-2018", "TL1-2018", "TH1-2018", "B3-2018"))
 ```
 
 ```{r global, include=FALSE}
-# load data in 'global' chunk so it can be shared by all users of the dashboard
 library(sp)
 library(tidyverse)
 library(ggrepel)
@@ -34,7 +48,6 @@ x <-
   select(tegund, val)
 my.list <- as.list(x$tegund)
 names(my.list) <- x$val
-
 ```
 
 Sidebar {.sidebar data-width=175}
@@ -48,6 +61,7 @@ selectInput(inputId = "Species", label = "Tegund:",
 radioButtons(inputId = "Type", label = "Val:", 
              choices = list("Numbers", "Weight"),
              selected = list("Numbers"))
+
 ```
 
 
@@ -94,6 +108,7 @@ renderPlot({
   } 
   
 })
+
 ```
 
 
@@ -129,6 +144,7 @@ renderPlot({
       labs(x = NULL, y = NULL)
   }
 })
+
 ```
 
 
@@ -179,6 +195,7 @@ renderLeaflet({
                  color = "red")
   }
 })
+
 ```
 
 Dreifing
@@ -220,6 +237,7 @@ renderPlot({
       facet_wrap(~ ar, nrow = 3)
   }
 })
+
 ```
 
 
@@ -257,6 +275,7 @@ renderPlot({
   p
   #ggplotly(p)
 })
+
 ```
 
 ### Lengd-slægt
@@ -279,6 +298,7 @@ renderPlot({
     scale_y_log10(breaks = c(5, 25, 250, 500, 1000, 5000, 10000), lim = range(d$slaegt, na.rm = TRUE))
   p
 })
+
 ```
 
 ### Lengd-slægt/óslægt
@@ -303,6 +323,7 @@ renderPlot({
     geom_text_repel(data = d %>% filter(!ok.sl.osl), aes(lengd, slaegt/oslaegt, label = lab))
   p
 })
+
 ```
 
 ### Lengd-lifur/óslaegt
@@ -324,6 +345,7 @@ renderPlot({
     geom_text_repel(data = d %>% filter(!ok.lifur.osl), aes(lengd, lifur/oslaegt, label = lab))
   p
 })
+
 ```
 
 ### Lengd-kynkirtlar/óslaegt
@@ -345,15 +367,35 @@ renderPlot({
     geom_text_repel(data = d %>% filter(!ok.kirtlar.osl), aes(lengd, kynfaeri/oslaegt, label = lab))
   p
 })
+
 ```
 
 Vikmörk-tafla
 =====================================
 
-Column
+Column {.tabset}
 -------------------------------------
 
-### Mælingar utan vikmarka
+### Lengdir - allar tegundir
+
+```{r}
+DT::renderDataTable({
+  le.this.year %>% 
+    filter(!ok.l) %>%
+    select(-c(synis_id, index)) %>% 
+    arrange(leidangur, stod, tegund) %>% 
+    DT::datatable(extensions = 'Scroller',
+                  rownames = FALSE,
+                  options = list(deferRender = TRUE,
+                                 scrollY = 700,
+                                 scroller = TRUE
+                  )) %>% 
+    formatStyle('ok.l', backgroundColor = styleEqual(c(0, 1), c('pink', '#C1FAAD')))
+})
+
+```
+
+### Kvarnir - eftir tegundum
 
 ```{r}
 DT::renderDataTable({
@@ -361,7 +403,8 @@ DT::renderDataTable({
     kv.this.year %>% 
     filter(tegund == as.numeric(input$Species),
            (!ok.osl | !ok.sl | !ok.sl.osl | !ok.kirtlar.osl | !ok.lifur.osl | !ok.magir.osl)) %>%
-    select(index, nr, lengd, oslaegt, slaegt, kynfaeri, lifur, magi, ok.osl:ok.lifur.osl, ok.magi.osl = ok.magir.osl)
+    left_join(st %>% select(synis_id, leidangur, stod)) %>% 
+    select(leidangur, stod, index, nr, lengd, oslaegt, slaegt, kynfaeri, lifur, magi, ok.osl:ok.lifur.osl, ok.magi.osl = ok.magir.osl)
   d %>% 
     DT::datatable(extensions = 'Scroller',
                   rownames = FALSE,
@@ -376,8 +419,34 @@ DT::renderDataTable({
     formatStyle('ok.lifur.osl', backgroundColor = styleEqual(c(0, 1), c('pink', '#C1FAAD'))) %>% 
     formatStyle('ok.magi.osl', backgroundColor = styleEqual(c(0, 1), c('pink', '#C1FAAD')))
 })
+
 ```
 
+### Kvarnir - allar tegundir
+
+```{r}
+DT::renderDataTable({
+  d <- 
+    kv.this.year %>% 
+    filter((!ok.osl | !ok.sl | !ok.sl.osl | !ok.kirtlar.osl | !ok.lifur.osl | !ok.magir.osl)) %>%
+    left_join(st %>% select(synis_id, leidangur, stod)) %>% 
+    select(leidangur, stod, index, nr, tegund, lengd, oslaegt, slaegt, kynfaeri, lifur, magi, ok.osl:ok.lifur.osl, ok.magi.osl = ok.magir.osl)
+  d %>% 
+    DT::datatable(extensions = 'Scroller',
+                  rownames = FALSE,
+                  options = list(deferRender = TRUE,
+                                 scrollY = 700,
+                                 scroller = TRUE
+                  )) %>% 
+    formatStyle('ok.osl', backgroundColor = styleEqual(c(0, 1), c('pink', '#C1FAAD'))) %>% 
+    formatStyle('ok.sl', backgroundColor = styleEqual(c(0, 1), c('pink', '#C1FAAD'))) %>% 
+    formatStyle('ok.sl.osl', backgroundColor = styleEqual(c(0, 1), c('pink', '#C1FAAD'))) %>% 
+    formatStyle('ok.kirtlar.osl', backgroundColor = styleEqual(c(0, 1), c('pink', '#C1FAAD'))) %>% 
+    formatStyle('ok.lifur.osl', backgroundColor = styleEqual(c(0, 1), c('pink', '#C1FAAD'))) %>% 
+    formatStyle('ok.magi.osl', backgroundColor = styleEqual(c(0, 1), c('pink', '#C1FAAD')))
+})
+
+```
 
 Tog
 =====================================
@@ -413,6 +482,7 @@ d2 %>%
   scale_colour_brewer(palette = "Set1") +
   labs(x = "Reitur-tognúmer", y = "Lárétt opnun", colour = "?r") +
   coord_flip()
+
 ```
 
 Column
@@ -446,6 +516,7 @@ d2 %>%
   scale_colour_brewer(palette = "Set1") +
   labs(x = "Reitur-tognúmer", y = "Lóðrétt opnun", colour = "?r") +
   coord_flip()
+
 ```
 
 
@@ -482,5 +553,37 @@ renderLeaflet({
     addLayersControl(overlayGroups = years,
                    options = layersControlOptions(collapsed = FALSE))
 })
+
+```
+
+Af aflabrögðum
+=====================================
+
+### Afli
+
+```{r}
+DT::renderDataTable({
+  by.station %>% 
+    filter(ar == 2018) %>% 
+    left_join(st %>% filter(ar == 2018) %>% select(index, leidangur)) %>% 
+    group_by(leidangur, tegund) %>% 
+    summarise(n = round(sum(n.std), 0),
+              b = round(sum(b.std), 0)) %>% 
+    gather(variable, value, n:b) %>% 
+    mutate(variable = paste0(variable, ".", leidangur)) %>% 
+    ungroup() %>% 
+    select(-leidangur) %>% 
+    spread(variable, value) %>%
+    left_join(fisktegundir) %>% 
+    mutate(tegund = paste(tegund, heiti)) %>% 
+    select(-heiti) %>% 
+    DT::datatable(extensions = 'Scroller',
+                  rownames = FALSE,
+                  options = list(deferRender = TRUE,
+                                 scrollY = 700,
+                                 scroller = TRUE
+                  ))
+})
+
 ```
 
