@@ -41,6 +41,10 @@ library(DT)
 load("data2/smb_dashboard.rda")
 
 Tegund <- sort(unique(by.tegund.lengd.ar$tegund))
+# You may need next line if smb_dashboard.rda was generated in windose but
+#  currently running linux - this is normally only needed when setting up
+#  app on the MRI shiny-webserver
+# fisktegundir$heiti <- iconv(fisktegundir$heiti, from = "ISO-8859-1", to = "UTF-8")
 x <- 
   fisktegundir %>% 
   filter(tegund %in% Tegund) %>% 
@@ -81,18 +85,19 @@ Column
 ```{r}
 renderPlot({
   if(input$Type == "Numbers") 
-    {
-  ggplot() +
+  {
+    ggplot() +
       theme_grey(base_size = 16) +
-    geom_ribbon(data = by.tegund.lengd.ar.m %>% 
-                  filter(tegund == as.numeric(input$Species)),
-                aes(lengd, ymax = n.std, ymin = 0), fill = "grey") +
-    geom_line(data = by.tegund.lengd.ar  %>% 
-                filter(tegund == as.numeric(input$Species),
-                       ar >= 2010),
-              aes(lengd, n.std)) +
-    facet_grid(ar ~ .) +
-    labs(x = NULL, y = "Fjöldi í hverju lengdarbili")
+      geom_ribbon(data = by.tegund.lengd.ar.m %>% 
+                    filter(tegund == as.numeric(input$Species)),
+                  aes(lengd, ymax = n.std, ymin = 0), fill = "grey") +
+      geom_line(data = by.tegund.lengd.ar  %>% 
+                  filter(tegund == as.numeric(input$Species),
+                         ar >= 2010),
+                aes(lengd, n.std)) +
+      facet_grid(ar ~ .) +
+      labs(x = NULL, y = "Fjöldi í hverju lengdarbili") +
+      scale_x_continuous(breaks = seq(10, 200, by = 10))
   } else {
     ggplot() +
       theme_grey(base_size = 16) +
@@ -104,7 +109,8 @@ renderPlot({
                          ar >= 2010),
                 aes(lengd, b.std)) +
       facet_grid(ar ~ .) +
-      labs(x = NULL, y = "Þyngd [kg] í hverju lengdarbili")
+      labs(x = NULL, y = "Þyngd [kg] í hverju lengdarbili") +
+      scale_x_continuous(breaks = seq(10, 200, by = 10))
   } 
   
 })
@@ -171,7 +177,7 @@ renderLeaflet({
       #     attribution = 'Data source: <a href="https://www.hafogvatn.is">Marine Rearch Institute</a>') %>% 
       addCircles(data = x0, weight = 0.5, color = "white") %>% 
       addCircles(weight = 1,
-                 popup = ~paste(n.std, "fiskar"),
+                 popup = ~paste(n.std, "stykki"),
                  radius = ~sqrt(n.std)/skali * 5e4,
                  color = "red")
   } else {
@@ -218,7 +224,7 @@ renderPlot({
       coord_quickmap(xlim = range(by.station$lon, na.rm = TRUE),
                      ylim = range(by.station$lat, na.rm = TRUE)) +
       theme(legend.position = c(0.5, 0.6)) +
-      labs(x = NULL, y = NULL, size = "Fj?ldi") +
+      labs(x = NULL, y = NULL, size = "Stykki") +
       facet_wrap(~ ar, nrow = 3)
   } else {
     by.station %>% 

@@ -4,7 +4,8 @@
 \alias{munge_for_smxapp}
 \title{Create R-binary bundle for the smxapp}
 \usage{
-munge_for_smxapp(con, st, nu, le, kv, id = 30, gid = 73, cruise)
+munge_for_smxapp(con, st, nu, le, kv, id = 30, gid = 73, cruise,
+  rda.file = "smb_dashboard.rda")
 }
 \arguments{
 \item{con}{XXX}
@@ -17,11 +18,14 @@ munge_for_smxapp(con, st, nu, le, kv, id = 30, gid = 73, cruise)
 
 \item{kv}{kv dataframe, not used if st is a list}
 
-\item{id}{synaflokkur}
+\item{id}{synaflokkur, deftault is 30}
 
-\item{gid}{veidarfaeri}
+\item{gid}{veidarfaeri, default is 73}
 
-\item{cruise}{leidangrar í schema hafvog.}
+\item{cruise}{leidangrar in schema hafvog}
+
+\item{rda.file}{name the exported binary file (default smb_dashboard.rda)
+which is stored in the directory data2}
 }
 \description{
 Create R-binary bundle for the smxapp

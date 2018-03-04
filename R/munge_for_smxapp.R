@@ -5,13 +5,15 @@
 #' @param nu nu dataframe, not used if st is a list
 #' @param le le dataframe, not used if st is a list
 #' @param kv kv dataframe, not used if st is a list
-#' @param id synaflokkur
-#' @param gid veidarfaeri
-#' @param cruise leidangrar í schema hafvog.
+#' @param id synaflokkur, deftault is 30
+#' @param gid veidarfaeri, default is 73
+#' @param cruise leidangrar in schema hafvog
+#' @param rda.file name the exported binary file (default smb_dashboard.rda)
+#' which is stored in the directory data2
 #'
 #' @export
 #'
-munge_for_smxapp <- function(con, st, nu, le, kv, id = 30, gid = 73, cruise) {
+munge_for_smxapp <- function(con, st, nu, le, kv, id = 30, gid = 73, cruise, rda.file = "smb_dashboard.rda") {
 
   now.year <- lubridate::now() %>% year()
 
@@ -42,6 +44,13 @@ munge_for_smxapp <- function(con, st, nu, le, kv, id = 30, gid = 73, cruise) {
     nu %>%
     complete(synis_id, tegund) %>%
     replace_na(list(fj_maelt = 0, fj_talid = 0, fj_alls = 0))
+
+  nu.this.year <-
+    st %>%
+    filter(ar == now.year,
+           index %in% index.done) %>%
+    select(synis_id, leidangur, stod) %>%
+    left_join(nu, by = "synis_id")
 
   le.this.year <-
     st %>%
@@ -291,8 +300,9 @@ munge_for_smxapp <- function(con, st, nu, le, kv, id = 30, gid = 73, cruise) {
        timi,
        kv.this.year,
        le.this.year,
+       nu.this.year,
        by.tegund.lengd.ar, by.tegund.lengd.ar.m,
-       by.station, fisktegundir, by.station.boot, file = "data2/smb_dashboard.rda")
+       by.station, fisktegundir, by.station.boot, file = paste0("data2/", rda.file))
 
   print("Ormurinn hefur lokid ser af")
 
