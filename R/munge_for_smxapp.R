@@ -73,7 +73,6 @@ munge_for_smxapp <- function(con, st, nu, le, kv, id = 30, gid = 73, cruise, rda
            b.std  = ifelse(is.na(n.std), 0, n.rai) * 0.00001 * lengd^3) %>%
     select(synis_id, ar, reitur, tognumer, toglengd, tegund:n.rai, n.std, b.std)
 
-  now.year <- lubridate::now() %>% lubridate::year()
 
   # B. STADLAR -----------------------------------------------------------------
   stadlar.rallstodvar <-
@@ -226,6 +225,38 @@ munge_for_smxapp <- function(con, st, nu, le, kv, id = 30, gid = 73, cruise, rda
   by.station.boot <-
     bind_rows(by.station.boot.n, by.station.boot.b)
 
+  # Do for all stations -------------------------------------------------
+  by.station.all <-
+    st %>%
+    select(synis_id, lon, lat, index) %>%
+    left_join(le, by = "synis_id") %>%
+    group_by(ar, index, lon, lat, tegund) %>%
+    summarise(n.std = sum(n.std, na.rm = TRUE),
+              b.std = sum(b.std, na.rm = TRUE)) %>%
+    ungroup()
+
+  print("Hartoga fjolda - all")
+
+  by.station.boot.n.all <-
+    by.station.all %>%
+    group_by(tegund, ar) %>%
+    do(my_boot(.$n.std)) %>%
+    mutate(variable = "n",
+           var = as.character(var))
+
+  print("Hartoga thyngd - all")
+
+  by.station.boot.b.all <-
+    by.station.all %>%
+    group_by(tegund, ar) %>%
+    do(my_boot(.$b.std)) %>%
+    mutate(variable = "b",
+           var = as.character(var))
+
+  by.station.boot.all <-
+    bind_rows(by.station.boot.n.all, by.station.boot.b.all)
+
+
   print("Vidoma dot")
 
   library(sp)
@@ -302,7 +333,10 @@ munge_for_smxapp <- function(con, st, nu, le, kv, id = 30, gid = 73, cruise, rda
        le.this.year,
        nu.this.year,
        by.tegund.lengd.ar, by.tegund.lengd.ar.m,
-       by.station, fisktegundir, by.station.boot, file = paste0("data2/", rda.file))
+       by.station, fisktegundir,
+       by.station.boot,
+       by.station.boot.all,
+       file = paste0("data2/", rda.file))
 
   print("Ormurinn hefur lokid ser af")
 
