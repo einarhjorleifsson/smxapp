@@ -420,9 +420,9 @@ DT::renderDataTable({
   d <- 
     kv.this.year %>% 
     filter(tegund == as.numeric(input$Species),
-           (!ok.osl | !ok.sl | !ok.sl.osl | !ok.kirtlar.osl | !ok.lifur.osl | !ok.magir.osl)) %>%
+           (!ok.osl | !ok.sl | !ok.sl.osl | !ok.kirtlar.osl | !ok.lifur.osl)) %>%
     left_join(st %>% select(synis_id, leidangur, stod)) %>% 
-    select(leidangur, stod, index, nr, lengd, oslaegt, slaegt, kynfaeri, lifur, magi, ok.osl:ok.lifur.osl, ok.magi.osl = ok.magir.osl)
+    select(leidangur, stod, index, nr, lengd, oslaegt, slaegt, kynfaeri, lifur, ok.osl:ok.lifur.osl)
   d %>% 
     DT::datatable(extensions = 'Scroller',
                   rownames = FALSE,
@@ -434,8 +434,7 @@ DT::renderDataTable({
     formatStyle('ok.sl', backgroundColor = styleEqual(c(0, 1), c('pink', '#C1FAAD'))) %>% 
     formatStyle('ok.sl.osl', backgroundColor = styleEqual(c(0, 1), c('pink', '#C1FAAD'))) %>% 
     formatStyle('ok.kirtlar.osl', backgroundColor = styleEqual(c(0, 1), c('pink', '#C1FAAD'))) %>% 
-    formatStyle('ok.lifur.osl', backgroundColor = styleEqual(c(0, 1), c('pink', '#C1FAAD'))) %>% 
-    formatStyle('ok.magi.osl', backgroundColor = styleEqual(c(0, 1), c('pink', '#C1FAAD')))
+    formatStyle('ok.lifur.osl', backgroundColor = styleEqual(c(0, 1), c('pink', '#C1FAAD')))
 })
 
 ```
@@ -446,9 +445,9 @@ DT::renderDataTable({
 DT::renderDataTable({
   d <- 
     kv.this.year %>% 
-    filter((!ok.osl | !ok.sl | !ok.sl.osl | !ok.kirtlar.osl | !ok.lifur.osl | !ok.magir.osl)) %>%
+    filter((!ok.osl | !ok.sl | !ok.sl.osl | !ok.kirtlar.osl | !ok.lifur.osl)) %>%
     left_join(st %>% select(synis_id, leidangur, stod)) %>% 
-    select(leidangur, stod, index, nr, tegund, lengd, oslaegt, slaegt, kynfaeri, lifur, magi, ok.osl:ok.lifur.osl, ok.magi.osl = ok.magir.osl)
+    select(leidangur, stod, index, tegund, nr, lengd, oslaegt, slaegt, kynfaeri, lifur, magi, ok.osl:ok.lifur.osl)
   d %>% 
     DT::datatable(extensions = 'Scroller',
                   rownames = FALSE,
@@ -460,10 +459,8 @@ DT::renderDataTable({
     formatStyle('ok.sl', backgroundColor = styleEqual(c(0, 1), c('pink', '#C1FAAD'))) %>% 
     formatStyle('ok.sl.osl', backgroundColor = styleEqual(c(0, 1), c('pink', '#C1FAAD'))) %>% 
     formatStyle('ok.kirtlar.osl', backgroundColor = styleEqual(c(0, 1), c('pink', '#C1FAAD'))) %>% 
-    formatStyle('ok.lifur.osl', backgroundColor = styleEqual(c(0, 1), c('pink', '#C1FAAD'))) %>% 
-    formatStyle('ok.magi.osl', backgroundColor = styleEqual(c(0, 1), c('pink', '#C1FAAD')))
+    formatStyle('ok.lifur.osl', backgroundColor = styleEqual(c(0, 1), c('pink', '#C1FAAD')))
 })
-
 ```
 
 Tog

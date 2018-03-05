@@ -29,16 +29,13 @@ munge_for_smxapp <- function(con, st, nu, le, kv, id = 30, gid = 73, cruise, rda
     st <- st$st
   }
 
-  if(missing(cruise)) {
-    index.done <-
-      st %>%
-      pull(index)
-  } else {
-    index.done <-
-      st %>%
-      filter(leidangur %in% cruise) %>%
-      pull(index)
-  }
+  st <-
+    st %>%
+    filter((ar == 2018 & leidangur %in% cruise) | ar < 2018)
+  index.done <-
+    st %>%
+    filter(leidangur %in% cruise) %>%
+    pull(index)
 
   i <- stringr::str_locate(st$leidangur, "-")[,1]
   st <-
