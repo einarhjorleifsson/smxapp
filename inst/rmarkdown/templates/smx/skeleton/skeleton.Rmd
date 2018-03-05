@@ -28,6 +28,7 @@ res <- import_smx(con)
 #   that is loaded (see load("data2/smb_dashboard.rda") in the next chunk
 #   when the "Run Document" is pressed
 library(smxapp)
+# con <- mar::connect_mar() - EH: test mode only
 munge_for_smxapp(con, res, cruise = c("A4-2018", "TL1-2018", "TH1-2018", "B3-2018"))
 ```
 
@@ -133,10 +134,15 @@ renderPlot({
              variable == "n") %>% 
       ggplot(aes(ar, n.std)) +
       theme_grey(base_size = 16) +
+      #geom_point(data = by.station.boot.all %>%
+      #             filter(tegund == as.numeric(input$Species),
+      #                    variable == "n",
+      #                    ar <= 2018),
+      #           aes(ar, mean),
+      #           colour = "grey") +
       geom_pointrange(aes(ar, mean, ymin = lower.ci, ymax = upper.ci)) +
-      #geom_text(data = x, aes(ar, y = -5, label = n), angle = 90) +
       scale_x_continuous(breaks = seq(1985, 2015, by = 5)) +
-      #expand_limits(y = 0) +
+      expand_limits(y = 0) +
       labs(x = NULL, y = NULL)
   } else {
     by.station.boot %>% 
@@ -144,6 +150,12 @@ renderPlot({
              variable == "b") %>% 
       ggplot(aes(ar, b.std)) +
       theme_grey(base_size = 16) +
+      #geom_point(data = by.station.boot.all %>%
+      #             filter(tegund == as.numeric(input$Species),
+      #                    variable == "b",
+      #                    ar <= 2018),
+      #           aes(ar, mean),
+      #           colour = "grey") +
       geom_pointrange(aes(ar, mean, ymin = lower.ci, ymax = upper.ci)) +
       scale_x_continuous(breaks = seq(1985, 2015, by = 5)) +
       expand_limits(y = 0) +
@@ -207,7 +219,7 @@ renderLeaflet({
 Dreifing
 =====================================
 
-### Afli í togi
+### Afli í staðaltogi
     
 ```{r}
 renderPlot({
@@ -481,6 +493,7 @@ d2 <-
   mutate(ar2 = factor(ar))
 
 d2 %>% 
+  select(index, id, larett_opnun) %>% 
   ggplot(aes(reorder(index, id), larett_opnun)) +
   geom_violin(scale = "width", colour = "grey") +
   geom_point(data = d2 %>% filter(ar >= 2014), aes(colour = ar2, group = ar2)) +
@@ -488,7 +501,6 @@ d2 %>%
   scale_colour_brewer(palette = "Set1") +
   labs(x = "Reitur-tognúmer", y = "Lárétt opnun", colour = "?r") +
   coord_flip()
-
 ```
 
 Column
@@ -515,6 +527,7 @@ d2 <-
   mutate(ar2 = factor(ar))
 
 d2 %>% 
+  select(index, id, lodrett_opnun) %>% 
   ggplot(aes(reorder(index, id), lodrett_opnun)) +
   geom_violin(scale = "width", colour = "grey") +
   geom_point(data = d2 %>% filter(ar >= 2014), aes(colour = ar2, group = ar2)) +
@@ -569,7 +582,8 @@ Af aflabrögðum
 
 ```{r}
 DT::renderDataTable({
-  by.station %>% 
+  x <- 
+    by.station %>% 
     filter(ar == 2018) %>% 
     left_join(st %>% filter(ar == 2018) %>% select(index, leidangur)) %>% 
     group_by(leidangur, tegund) %>% 
@@ -582,13 +596,27 @@ DT::renderDataTable({
     spread(variable, value) %>%
     left_join(fisktegundir) %>% 
     mutate(tegund = paste(tegund, heiti)) %>% 
-    select(-heiti) %>% 
-    DT::datatable(extensions = 'Scroller',
-                  rownames = FALSE,
-                  options = list(deferRender = TRUE,
-                                 scrollY = 700,
-                                 scroller = TRUE
-                  ))
+    select(-heiti)
+  if(input$Type == "Numbers") {
+    x %>% 
+      select(tegund, starts_with("n.")) %>% 
+      DT::datatable(extensions = 'Scroller',
+                    rownames = FALSE,
+                    options = list(deferRender = TRUE,
+                                   scrollY = 700,
+                                   scroller = TRUE
+                    ))
+  } else {
+    x %>% 
+      select(tegund, starts_with("b.")) %>% 
+      DT::datatable(extensions = 'Scroller',
+                    rownames = FALSE,
+                    options = list(deferRender = TRUE,
+                                   scrollY = 700,
+                                   scroller = TRUE
+                    ))
+  }
+ 
 })
 
 ```

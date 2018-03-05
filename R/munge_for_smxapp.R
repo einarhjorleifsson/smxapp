@@ -15,7 +15,7 @@
 #'
 munge_for_smxapp <- function(con, st, nu, le, kv, id = 30, gid = 73, cruise, rda.file = "smb_dashboard.rda") {
 
-  now.year <- lubridate::now() %>% year()
+  now.year <- lubridate::now() %>% lubridate::year()
 
 
   min.towlength <- 2             # Minimum "acceptable" towlength
@@ -39,6 +39,11 @@ munge_for_smxapp <- function(con, st, nu, le, kv, id = 30, gid = 73, cruise, rda
       filter(leidangur %in% cruise) %>%
       pull(index)
   }
+
+  i <- stringr::str_locate(st$leidangur, "-")[,1]
+  st <-
+    st %>%
+    mutate(leidstod = paste0(stringr::str_sub(leidangur, 1, i), stod))
 
   nu <-
     nu %>%
@@ -170,9 +175,9 @@ munge_for_smxapp <- function(con, st, nu, le, kv, id = 30, gid = 73, cruise, rda
     st %>%
     filter(ar == now.year,
            index %in% index.done) %>%
-    select(synis_id, index) %>%
+    select(synis_id, index, leidstod) %>%
     left_join(kv, by = "synis_id") %>%
-    mutate(lab = paste0(index, "-", nr)) %>%
+    mutate(lab = paste0(leidstod, "-", nr)) %>%
     left_join(stadlar.lw, by = c("tegund", "lengd")) %>%
     mutate(ok.osl = if_else(oslaegt >= osl1 & oslaegt <= osl2, TRUE, FALSE, TRUE),
            ok.sl = if_else(slaegt >= sl1 & slaegt <= sl2, TRUE, FALSE, TRUE)) %>%
