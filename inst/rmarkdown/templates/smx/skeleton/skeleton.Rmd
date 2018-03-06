@@ -28,8 +28,9 @@ res <- import_smx(con)
 #   that is loaded (see load("data2/smb_dashboard.rda") in the next chunk
 #   when the "Run Document" is pressed
 library(smxapp)
-# con <- mar::connect_mar() - EH: test mode only
-munge_for_smxapp(con, res, cruise = c("A4-2018", "TL1-2018", "TH1-2018", "B3-2018"))
+# The cruise argument below can be changed. E.g. if on only wants to look at the
+# data for Hjalteyrin then the argument would simply be cruise = c("TH1-2018")
+munge_for_smxapp(res, cruise = c("A4-2018", "TL1-2018", "TH1-2018", "B3-2018"))
 ```
 
 ```{r global, include=FALSE}

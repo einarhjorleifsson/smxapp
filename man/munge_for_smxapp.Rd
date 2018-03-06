@@ -4,23 +4,11 @@
 \alias{munge_for_smxapp}
 \title{Create R-binary bundle for the smxapp}
 \usage{
-munge_for_smxapp(con, st, nu, le, kv, id = 30, gid = 73, cruise,
-  rda.file = "smb_dashboard.rda")
+munge_for_smxapp(res, cruise, rda.file = "smb_dashboard.rda")
 }
 \arguments{
-\item{con}{XXX}
-
-\item{st}{a list contain st, nu, le and kv or a st dataframe}
-
-\item{nu}{nu dataframe, not used if st is a list}
-
-\item{le}{le dataframe, not used if st is a list}
-
-\item{kv}{kv dataframe, not used if st is a list}
-
-\item{id}{synaflokkur, deftault is 30}
-
-\item{gid}{veidarfaeri, default is 73}
+\item{res}{a list contain st, nu, le and kv and other things. The object is
+generated via function import_smx (in the xe-package)}
 
 \item{cruise}{leidangrar in schema hafvog}
 

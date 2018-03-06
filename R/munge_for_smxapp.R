@@ -1,19 +1,15 @@
 #' Create R-binary bundle for the smxapp
 #'
-#' @param con XXX
-#' @param st a list contain st, nu, le and kv or a st dataframe
-#' @param nu nu dataframe, not used if st is a list
-#' @param le le dataframe, not used if st is a list
-#' @param kv kv dataframe, not used if st is a list
-#' @param id synaflokkur, deftault is 30
-#' @param gid veidarfaeri, default is 73
+#' @param res a list contain st, nu, le and kv and other things. The object is
+#' generated via function import_smx (in the xe-package)
 #' @param cruise leidangrar in schema hafvog
 #' @param rda.file name the exported binary file (default smb_dashboard.rda)
 #' which is stored in the directory data2
 #'
 #' @export
 #'
-munge_for_smxapp <- function(con, st, nu, le, kv, id = 30, gid = 73, cruise, rda.file = "smb_dashboard.rda") {
+# cruise = c("A4-2018", "TL1-2018", "TH1-2018", "B3-2018")
+munge_for_smxapp <- function(res, cruise, rda.file = "smb_dashboard.rda") {
 
   now.year <- lubridate::now() %>% lubridate::year()
 
@@ -22,12 +18,10 @@ munge_for_smxapp <- function(con, st, nu, le, kv, id = 30, gid = 73, cruise, rda
   max.towlength <- 8             # Maximum "acceptable" towlength
   std.towlength <- 4             # Standard tow length is 4 nautical miles
 
-  if(class(st) == "list") {
-    nu <- st$nu
-    le <- st$le
-    kv <- st$kv
-    st <- st$st
-  }
+  st <- res$st
+  nu <- res$nu
+  le <- res$le
+  kv <- res$kv
 
   st <-
     st %>%
@@ -77,37 +71,11 @@ munge_for_smxapp <- function(con, st, nu, le, kv, id = 30, gid = 73, cruise, rda
 
 
   # B. STADLAR -----------------------------------------------------------------
-  stadlar.rallstodvar <-
-    lesa_stadla_rallstodvar(con) %>%
-    filter(veidarfaeri_id == gid,
-           synaflokkur == id) %>%
-    collect(n = Inf) %>%
-    geo::geoconvert(col.names = c("kastad_v", "kastad_n")) %>%
-    geo::geoconvert(col.names = c("hift_v",   "hift_n"))
-
-  stadlar.tegundir <-
-    lesa_stadla_tegund_smb(con) %>%
-    filter(leidangur_id == 1) %>%
-    arrange(tegund) %>%
-    collect(n = Inf) %>%
-    gather(variable, value, lifur_low:kynkirtlar_high) %>%
-    mutate(value = value / 100) %>%
-    spread(variable, value)
-
-  stadlar.lw <-
-    lesa_stadla_lw(con) %>%
-    collect(n = Inf) %>%
-    mutate(osl1 = osl * (1 - fravik),
-           osl2 = osl * (1 + fravik),
-           sl1 = sl * (1 - fravik),
-           sl2 = sl * (1 + fravik)) %>%
-    select(tegund, lengd, osl1:sl2)
-
-  fisktegundir <-
-    tbl_mar(con, "hafvog.fisktegundir") %>%
-    select(tegund, heiti) %>%
-    arrange(tegund) %>%
-    collect(n = Inf)
+  other.stuff <- res$other.stuff
+  stadlar.rallstodvar <- other.stuff$stadlar.rallstodvar
+  stadlar.tegundir <-    other.stuff$stadlar.tegundir
+  stadlar.lw <- other.stuff$stadlar.lw
+  fisktegundir <- other.stuff$fisktegundir
 
   # IMPORT
   # ----------------------------------------------------------------------------
