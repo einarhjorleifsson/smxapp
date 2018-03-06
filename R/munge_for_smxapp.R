@@ -144,8 +144,8 @@ munge_for_smxapp <- function(res, cruise, rda.file = "smb_dashboard.rda") {
     left_join(kv, by = "synis_id") %>%
     mutate(lab = paste0(leidstod, "-", nr)) %>%
     left_join(stadlar.lw, by = c("tegund", "lengd")) %>%
-    mutate(ok.osl = if_else(oslaegt >= osl1 & oslaegt <= osl2, TRUE, FALSE, TRUE),
-           ok.sl = if_else(slaegt >= sl1 & slaegt <= sl2, TRUE, FALSE, TRUE)) %>%
+    mutate(ok.l.osl = if_else(oslaegt >= osl1 & oslaegt <= osl2, TRUE, FALSE, TRUE),
+           ok.l.sl = if_else(slaegt >= sl1 & slaegt <= sl2, TRUE, FALSE, TRUE)) %>%
     select(-c(osl1:sl2)) %>%
     left_join(stadlar.tegundir %>%
                 select(tegund, kynkirtlar_high:oslaegt_vigtad_low), by = "tegund") %>%

@@ -274,15 +274,14 @@ renderPlot({
   d <- 
     kv.this.year %>%
     filter(tegund == as.numeric(input$Species))
-  p <- 
-    ggplot() +
+  ggplot() +
     theme_grey(base_size = 16) +
     geom_ribbon(data = stadlar.lw %>% filter(tegund == as.numeric(input$Species)),
                 aes(lengd, ymin = osl1, ymax = osl2),
                 fill = "pink") +
-    geom_point(data = d %>% filter(ok.osl), aes(lengd, oslaegt), size = 1, alpha = 0.5, colour = "blue") +
-    geom_point(data = d %>% filter(!ok.osl), aes(lengd, oslaegt), colour = "red") +
-    geom_text_repel(data = d %>% filter(!ok.osl), aes(lengd, oslaegt, label = lab)) +
+    geom_point(data = d %>% filter(ok.l.osl), aes(lengd, oslaegt), size = 1, alpha = 0.5, colour = "blue") +
+    geom_point(data = d %>% filter(!ok.l.osl), aes(lengd, oslaegt), colour = "red") +
+    geom_text_repel(data = d %>% filter(!ok.l.osl), aes(lengd, oslaegt, label = lab)) +
     scale_x_log10(breaks = c(seq(5, 50, by = 5), seq(60, 100, by = 10), 120, 140, 160, 200), lim = range(d$lengd, na.rm = TRUE)) +
     scale_y_log10(breaks = c(seq(5, 50, by = 5),
                              seq(60, 100, by = 10),
@@ -291,8 +290,6 @@ renderPlot({
                              seq(1500, 10000, by = 500),
                              seq(15000, 30000, by = 1000)),
                   lim = range(d$oslaegt, na.rm = TRUE))
-  p
-  #ggplotly(p)
 })
 
 ```
@@ -304,18 +301,16 @@ renderPlot({
   d <- 
     kv.this.year %>% 
     filter(tegund == as.numeric(input$Species)) #%>% 
-  p <- 
-    ggplot() +
+  ggplot() +
     theme_grey(base_size = 16) +
     geom_ribbon(data = stadlar.lw %>% filter(tegund == as.numeric(input$Species)),
                 aes(lengd, ymin = sl1, ymax = sl2),
                 fill = "pink") +
-    geom_point(data = d %>% filter(ok.sl), aes(lengd, slaegt), size = 1, alpha = 0.5, colour = "blue") +
-    geom_point(data = d %>% filter(!ok.sl), aes(lengd, slaegt), colour = "red") +
-    geom_text_repel(data = d %>% filter(!ok.sl), aes(lengd, slaegt, label = lab)) +
+    geom_point(data = d %>% filter(ok.l.sl), aes(lengd, slaegt), size = 1, alpha = 0.5, colour = "blue") +
+    geom_point(data = d %>% filter(!ok.l.sl), aes(lengd, slaegt), colour = "red") +
+    geom_text_repel(data = d %>% filter(!ok.l.sl), aes(lengd, slaegt, label = lab)) +
     scale_x_log10(breaks = c(5, 10, 15, 30, 60, 100), lim = range(d$lengd, na.rm = TRUE)) +
     scale_y_log10(breaks = c(5, 25, 250, 500, 1000, 5000, 10000), lim = range(d$slaegt, na.rm = TRUE))
-  p
 })
 
 ```
@@ -330,8 +325,7 @@ renderPlot({
   d <- 
     kv.this.year %>% 
     filter(tegund == as.numeric(input$Species))
-  p <- 
-    ggplot() +
+  ggplot() +
     theme_grey(base_size = 16) +
     geom_hline(yintercept = 1, colour = "red", lwd = 2) +
     geom_rect(data = stadlar,
@@ -340,7 +334,6 @@ renderPlot({
     geom_point(data = d %>% filter(ok.sl.osl), aes(lengd, slaegt/oslaegt), size = 1, alpha = 0.5, colour = "blue") +
     geom_point(data = d %>% filter(!ok.sl.osl), aes(lengd, slaegt/oslaegt), colour = "red") +
     geom_text_repel(data = d %>% filter(!ok.sl.osl), aes(lengd, slaegt/oslaegt, label = lab))
-  p
 })
 
 ```
@@ -352,8 +345,7 @@ renderPlot({
   d <- 
     kv.this.year %>% 
     filter(tegund == as.numeric(input$Species))
-  p <- 
-    ggplot() +
+  ggplot() +
     theme_grey(base_size = 16) +
     #geom_hline(yintercept = 1, colour = "red", lwd = 2) +
     geom_rect(data = stadlar.tegundir %>% filter(tegund == as.numeric(input$Species)),
@@ -362,7 +354,6 @@ renderPlot({
     geom_point(data = d %>% filter(ok.lifur.osl), aes(lengd, lifur/oslaegt), size = 1, alpha = 0.5, colour = "blue") +
     geom_point(data = d %>% filter(!ok.lifur.osl), aes(lengd, lifur/oslaegt), colour = "red") +
     geom_text_repel(data = d %>% filter(!ok.lifur.osl), aes(lengd, lifur/oslaegt, label = lab))
-  p
 })
 
 ```
@@ -374,8 +365,7 @@ renderPlot({
   d <- 
     kv.this.year %>% 
     filter(tegund == as.numeric(input$Species))
-  p <- 
-    ggplot() +
+  ggplot() +
     theme_grey(base_size = 16) +
     #geom_hline(yintercept = 1, colour = "red", lwd = 2) +
     geom_rect(data = stadlar.tegundir %>% filter(tegund == as.numeric(input$Species)),
@@ -384,7 +374,6 @@ renderPlot({
     geom_point(data = d %>% filter(ok.kirtlar.osl), aes(lengd, kynfaeri/oslaegt), size = 1, alpha = 0.5, colour = "blue") +
     geom_point(data = d %>% filter(!ok.kirtlar.osl), aes(lengd, kynfaeri/oslaegt), colour = "red") +
     geom_text_repel(data = d %>% filter(!ok.kirtlar.osl), aes(lengd, kynfaeri/oslaegt, label = lab))
-  p
 })
 
 ```
@@ -421,9 +410,9 @@ DT::renderDataTable({
   d <- 
     kv.this.year %>% 
     filter(tegund == as.numeric(input$Species),
-           (!ok.osl | !ok.sl | !ok.sl.osl | !ok.kirtlar.osl | !ok.lifur.osl)) %>%
+           (!ok.l.osl | !ok.l.sl | !ok.sl.osl | !ok.kirtlar.osl | !ok.lifur.osl)) %>%
     left_join(st %>% select(synis_id, leidangur, stod)) %>% 
-    select(leidangur, stod, index, nr, lengd, oslaegt, slaegt, kynfaeri, lifur, ok.osl:ok.lifur.osl)
+    select(leidangur, stod, index, nr, lengd, oslaegt, slaegt, kynfaeri, lifur, ok.l.osl:ok.lifur.osl)
   d %>% 
     DT::datatable(extensions = 'Scroller',
                   rownames = FALSE,
@@ -431,8 +420,8 @@ DT::renderDataTable({
                                  scrollY = 700,
                                  scroller = TRUE
                   )) %>% 
-    formatStyle('ok.osl', backgroundColor = styleEqual(c(0, 1), c('pink', '#C1FAAD'))) %>% 
-    formatStyle('ok.sl', backgroundColor = styleEqual(c(0, 1), c('pink', '#C1FAAD'))) %>% 
+    formatStyle('ok.l.osl', backgroundColor = styleEqual(c(0, 1), c('pink', '#C1FAAD'))) %>% 
+    formatStyle('ok.l.sl', backgroundColor = styleEqual(c(0, 1), c('pink', '#C1FAAD'))) %>% 
     formatStyle('ok.sl.osl', backgroundColor = styleEqual(c(0, 1), c('pink', '#C1FAAD'))) %>% 
     formatStyle('ok.kirtlar.osl', backgroundColor = styleEqual(c(0, 1), c('pink', '#C1FAAD'))) %>% 
     formatStyle('ok.lifur.osl', backgroundColor = styleEqual(c(0, 1), c('pink', '#C1FAAD')))
@@ -446,9 +435,9 @@ DT::renderDataTable({
 DT::renderDataTable({
   d <- 
     kv.this.year %>% 
-    filter((!ok.osl | !ok.sl | !ok.sl.osl | !ok.kirtlar.osl | !ok.lifur.osl)) %>%
+    filter((!ok.l.osl | !ok.l.sl | !ok.sl.osl | !ok.kirtlar.osl | !ok.lifur.osl)) %>%
     left_join(st %>% select(synis_id, leidangur, stod)) %>% 
-    select(leidangur, stod, index, tegund, nr, lengd, oslaegt, slaegt, kynfaeri, lifur, magi, ok.osl:ok.lifur.osl)
+    select(leidangur, stod, index, tegund, nr, lengd, oslaegt, slaegt, kynfaeri, lifur, magi, ok.l.osl:ok.lifur.osl)
   d %>% 
     DT::datatable(extensions = 'Scroller',
                   rownames = FALSE,
@@ -456,8 +445,8 @@ DT::renderDataTable({
                                  scrollY = 700,
                                  scroller = TRUE
                   )) %>% 
-    formatStyle('ok.osl', backgroundColor = styleEqual(c(0, 1), c('pink', '#C1FAAD'))) %>% 
-    formatStyle('ok.sl', backgroundColor = styleEqual(c(0, 1), c('pink', '#C1FAAD'))) %>% 
+    formatStyle('ok.l.osl', backgroundColor = styleEqual(c(0, 1), c('pink', '#C1FAAD'))) %>% 
+    formatStyle('ok.l.sl', backgroundColor = styleEqual(c(0, 1), c('pink', '#C1FAAD'))) %>% 
     formatStyle('ok.sl.osl', backgroundColor = styleEqual(c(0, 1), c('pink', '#C1FAAD'))) %>% 
     formatStyle('ok.kirtlar.osl', backgroundColor = styleEqual(c(0, 1), c('pink', '#C1FAAD'))) %>% 
     formatStyle('ok.lifur.osl', backgroundColor = styleEqual(c(0, 1), c('pink', '#C1FAAD')))
