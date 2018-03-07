@@ -26,10 +26,10 @@ For the smx app you could do:
     library(sp)
     library(ROracle)
     library(xe)
-    library(smxapp)
     con <- connect_xe()
     res <- import_smx(con)
-    export_for_smxapp(con, res, cruise = c("A4-2018", "TL1-2018", "TH1-2018", "B3-2018"))
+    library(smxapp)
+    munge_for_smxapp(con, res, cruise = c("A4-2018", "TL1-2018", "TH1-2018", "B3-2018"))
 
 Once done go:
 
