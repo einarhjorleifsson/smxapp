@@ -84,6 +84,11 @@ st.dummy <-
                           botnhiti, yfirbordshiti, vir_uti)) %>%
   gather(variable, value, larett_opnun:vir_uti) %>% 
   filter(!is.na(value))
+st.dummy.median <-
+  st.dummy %>% 
+  group_by(leidangur, ar, variable) %>% 
+  summarise(value = median(value, na.rm = TRUE)) %>% 
+  ungroup()
 ```
 
 Sidebar {.sidebar data-width=175}
@@ -544,7 +549,11 @@ renderPlot({
     ggplot(aes(ar, value)) +
     geom_violin(aes(group = ar)) +
     geom_jitter(aes(group = ar), alpha = 0.2, colour = "red", size = 0.5) + 
-    geom_smooth(span = 0.01) +
+    geom_line(data = 
+                st.dummy.median %>% 
+                filter(leidangur == input$Leidangur,
+                       variable %in% c("larett_opnun", "lodrett_opnun", "vir_uti")),
+              colour = "blue") +
     facet_wrap(~ variable, scale = "free_y") +
     labs(x = NULL, y = NULL)
 })
@@ -561,7 +570,11 @@ renderPlot({
     ggplot(aes(ar, value)) +
     geom_violin(aes(group = ar)) +
     geom_jitter(aes(group = ar), alpha = 0.2, colour = "red", size = 0.5) + 
-    geom_smooth(span = 0.01) +
+    eom_line(data = 
+               st.dummy.median %>% 
+               filter(leidangur == input$Leidangur,
+                      variable %in% c("botnhiti", "yfirbordshiti")),
+             colour = "blue") +
     facet_wrap(~ variable, scale = "free_y") +
     labs(x = NULL, y = NULL)
 })
