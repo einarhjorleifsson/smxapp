@@ -75,6 +75,15 @@ last.20 <-
                           botnhiti, yfirbordshiti, vir_uti)) %>%
   gather(variable, value, larett_opnun:vir_uti) %>% 
   filter(!is.na(value))
+st.dummy <-
+  st %>%  
+  filter(index %in% index.done,
+         ar == 2018) %>% 
+  select(leidangur, index) %>% 
+  left_join(st %>% select(index, ar, larett_opnun, lodrett_opnun,
+                          botnhiti, yfirbordshiti, vir_uti)) %>%
+  gather(variable, value, larett_opnun:vir_uti) %>% 
+  filter(!is.na(value))
 ```
 
 Sidebar {.sidebar data-width=175}
@@ -483,25 +492,80 @@ DT::renderDataTable({
 Togupplýsingar
 =====================================
 
-### Troll stuff - síðustu 20 stöðvar
+Column {.tabset}
+-------------------------------------
+
+### Lögun - síðustu 20 stöðvar
 
 ```{r}
 renderPlot({
   last.20 %>% 
-    filter(leidangur == input$Leidangur) %>% 
+    filter(leidangur == input$Leidangur,
+           variable %in% c("larett_opnun", "lodrett_opnun", "vir_uti")) %>% 
     ggplot(aes(reorder(index, id), value)) +
     theme_bw() +
     geom_violin(scale = "width", colour = "grey") +
-    geom_point(data = last.20 %>% filter(ar >= 2014, leidangur == input$Leidangur), aes(colour = factor(ar), group = factor(ar))) +
-    geom_line(data = last.20 %>% filter(ar >= 2014, leidangur == input$Leidangur), aes(colour = factor(ar), group = factor(ar))) +
+    geom_point(data = last.20 %>% filter(ar >= 2014, leidangur == input$Leidangur, variable %in% c("larett_opnun", "lodrett_opnun", "vir_uti")), aes(colour = factor(ar), group = factor(ar))) +
+    geom_line(data = last.20 %>% filter(ar >= 2014, leidangur == input$Leidangur, variable %in% c("larett_opnun", "lodrett_opnun", "vir_uti")), aes(colour = factor(ar), group = factor(ar))) +
     scale_colour_brewer(palette = "Set1") +
     facet_wrap(~ variable, scale = "free_x") +
-    theme(legend.position = c(0.8, 0.2)) +
     coord_flip() +
     labs(y = NULL, x = NULL, colour = "Year")
 })
 ```
 
+### Umhverfi - síðustu 20 stöðvar
+
+```{r}
+renderPlot({
+  last.20 %>% 
+    filter(leidangur == input$Leidangur,
+           variable %in% c("botnhiti", "yfirbordshiti")) %>% 
+    ggplot(aes(reorder(index, id), value)) +
+    theme_bw() +
+    geom_violin(scale = "width", colour = "grey") +
+    geom_point(data = last.20 %>% filter(ar >= 2014, leidangur == input$Leidangur, variable %in% c("botnhiti", "yfirbordshiti")), aes(colour = factor(ar), group = factor(ar))) +
+    geom_line(data = last.20 %>% filter(ar >= 2014, leidangur == input$Leidangur, variable %in% c("botnhiti", "yfirbordshiti")), aes(colour = factor(ar), group = factor(ar))) +
+    scale_colour_brewer(palette = "Set1") +
+    facet_wrap(~ variable, scale = "free_x") +
+    coord_flip() +
+    labs(y = NULL, x = NULL, colour = "Year")
+})
+```
+
+### Tímatrend - lögun
+
+```{r}
+renderPlot({
+  
+  st.dummy %>% 
+    filter(leidangur == input$Leidangur,
+           variable %in% c("larett_opnun", "lodrett_opnun", "vir_uti")) %>% 
+    ggplot(aes(ar, value)) +
+    geom_violin(aes(group = ar)) +
+    geom_jitter(aes(group = ar), alpha = 0.2, colour = "red", size = 0.5) + 
+    geom_smooth(span = 0.01) +
+    facet_wrap(~ variable, scale = "free_y") +
+    labs(x = NULL, y = NULL)
+})
+```
+
+### Tímatrend - umhverfi
+
+```{r}
+renderPlot({
+  
+  st.dummy %>% 
+    filter(leidangur == input$Leidangur,
+           variable %in% c("botnhiti", "yfirbordshiti")) %>% 
+    ggplot(aes(ar, value)) +
+    geom_violin(aes(group = ar)) +
+    geom_jitter(aes(group = ar), alpha = 0.2, colour = "red", size = 0.5) + 
+    geom_smooth(span = 0.01) +
+    facet_wrap(~ variable, scale = "free_y") +
+    labs(x = NULL, y = NULL)
+})
+```
 
 Surf and turf
 =====================================
