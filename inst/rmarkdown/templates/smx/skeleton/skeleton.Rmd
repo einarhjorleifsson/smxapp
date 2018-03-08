@@ -107,7 +107,7 @@ Síðast uppfært:
 
 `r as.character(timi)`
 
-ATH: Val á leiðangri eingöngu fyrir Togupplýsingar
+ATH: Val á leiðangri ekki virkt í öllum gluggum.
 
 Dót til prufu - um kóðann sem er á bak við má fræðast um nánar [hér](http://www.hafro.is/~einarhj/gagnakvorn).
 
