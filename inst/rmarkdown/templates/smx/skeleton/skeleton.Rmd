@@ -520,14 +520,25 @@ Column {.tabset}
 
 ```{r}
 renderPlot({
-  last.20 %>% 
+  d <-
+    last.20 %>% 
     filter(leidangur == input$Leidangur,
-           variable %in% c("larett_opnun", "lodrett_opnun", "vir_uti")) %>% 
+           variable %in% c("larett_opnun", "lodrett_opnun", "vir_uti"))
+  d2 <- 
+    d %>% 
+    filter(ar %in% 2013:2017)
+  d3 <-
+    d %>% 
+    filter(ar %in% 2018)
+    
+  d %>% 
     ggplot(aes(reorder(index, id), value)) +
     theme_bw() +
     geom_violin(scale = "width", colour = "grey") +
-    geom_point(data = last.20 %>% filter(ar >= 2014, leidangur == input$Leidangur, variable %in% c("larett_opnun", "lodrett_opnun", "vir_uti")), aes(colour = factor(ar), group = factor(ar))) +
-    geom_line(data = last.20 %>% filter(ar >= 2014, leidangur == input$Leidangur, variable %in% c("larett_opnun", "lodrett_opnun", "vir_uti")), aes(colour = factor(ar), group = factor(ar))) +
+    geom_point(data = d2, aes(colour = factor(ar), group = factor(ar))) +
+    geom_line(data = d2,   aes(colour = factor(ar), group = factor(ar))) +
+    geom_point(data = d3, aes(group = factor(ar)), lwd = 1) +
+    geom_line(data = d3,   aes(group = factor(ar)), lwd = 1) +
     scale_colour_brewer(palette = "Set1") +
     facet_wrap(~ variable, scale = "free_x") +
     coord_flip() +
@@ -539,14 +550,25 @@ renderPlot({
 
 ```{r}
 renderPlot({
-  last.20 %>% 
+  d <-
+    last.20 %>% 
     filter(leidangur == input$Leidangur,
-           variable %in% c("botnhiti", "yfirbordshiti")) %>% 
+           variable %in% c("botnhiti", "yfirbordshiti"))
+  d2 <- 
+    d %>% 
+    filter(ar %in% 2013:2017)
+  d3 <-
+    d %>% 
+    filter(ar %in% 2018)
+    
+  d %>% 
     ggplot(aes(reorder(index, id), value)) +
     theme_bw() +
     geom_violin(scale = "width", colour = "grey") +
-    geom_point(data = last.20 %>% filter(ar >= 2014, leidangur == input$Leidangur, variable %in% c("botnhiti", "yfirbordshiti")), aes(colour = factor(ar), group = factor(ar))) +
-    geom_line(data = last.20 %>% filter(ar >= 2014, leidangur == input$Leidangur, variable %in% c("botnhiti", "yfirbordshiti")), aes(colour = factor(ar), group = factor(ar))) +
+    geom_point(data = d2, aes(colour = factor(ar), group = factor(ar))) +
+    geom_line(data = d2,   aes(colour = factor(ar), group = factor(ar))) +
+    geom_point(data = d3, aes(group = factor(ar)), lwd = 1) +
+    geom_line(data = d3,   aes(group = factor(ar)), lwd = 1) +
     scale_colour_brewer(palette = "Set1") +
     facet_wrap(~ variable, scale = "free_x") +
     coord_flip() +
@@ -586,7 +608,7 @@ renderPlot({
     ggplot(aes(ar, value)) +
     geom_violin(aes(group = ar)) +
     geom_jitter(aes(group = ar), alpha = 0.2, colour = "red", size = 0.5) + 
-    eom_line(data = 
+    geom_line(data = 
                st.dummy.median %>% 
                filter(leidangur == input$Leidangur,
                       variable %in% c("botnhiti", "yfirbordshiti")),
