@@ -52,8 +52,29 @@ x <-
   filter(tegund %in% Tegund) %>% 
   mutate(val = paste(tegund, heiti)) %>% 
   select(tegund, val)
-my.list <- as.list(x$tegund)
-names(my.list) <- x$val
+my.species <- as.list(x$tegund)
+names(my.species) <- x$val
+x <- st %>% filter(ar == 2018) %>% select(leidangur) %>% distinct()
+my.cruises <- as.list(x$leidangur)
+names(my.cruises) <- x$leidangur
+# For debugging input <- data_frame(Species = 1, Type = "Numbers")
+
+index.done.cruise <-
+  data_frame(index = index.done) %>% 
+  left_join(st %>% filter(ar == 2018) %>% select(leidangur, stod, index, togbyrjun))
+last.20 <-
+  st %>%  
+  filter(ar == 2018) %>% 
+  arrange(leidangur, desc(togbyrjun)) %>% 
+  group_by(leidangur) %>% 
+  slice(1:20) %>% 
+  mutate(id = n():1) %>% 
+  ungroup() %>% 
+  select(leidangur, id, index) %>% 
+  left_join(st %>% select(index, ar, larett_opnun, lodrett_opnun,
+                          botnhiti, yfirbordshiti, vir_uti)) %>%
+  gather(variable, value, larett_opnun:vir_uti) %>% 
+  filter(!is.na(value))
 ```
 
 Sidebar {.sidebar data-width=175}
@@ -61,17 +82,23 @@ Sidebar {.sidebar data-width=175}
 
 ```{r}
 selectInput(inputId = "Species", label = "Tegund:",
-            choices = my.list, selected = 1)
+            choices = my.species, selected = 1)
 
 
 radioButtons(inputId = "Type", label = "Val:", 
              choices = list("Numbers", "Weight"),
              selected = list("Numbers"))
 
+selectInput(inputId = "Leidangur", label = "Leidangur:",
+            choices = my.cruises, selected = my.cruises[[1]])
 ```
 
 
-Síðast uppfært: `r as.character(timi)`
+Síðast uppfært: 
+
+`r as.character(timi)`
+
+ATH: Val á leiðangri eingöngu fyrir Togupplýsingar
 
 Dót til prufu - um kóðann sem er á bak við má fræðast um nánar [hér](http://www.hafro.is/~einarhj/gagnakvorn).
 
@@ -453,78 +480,27 @@ DT::renderDataTable({
 })
 ```
 
-Tog
+Togupplýsingar
 =====================================
 
-Column
--------------------------------------
-
-### Lárétt opnum - síðustu 40 stöðvar
+### Troll stuff - síðustu 20 stöðvar
 
 ```{r}
-last.10 <- 
-  st %>% 
-  filter(index %in% index.done) %>% 
-  arrange(-stod) %>% 
-  slice(1:40) %>% 
-  arrange(togbyrjun) %>% 
-  select(index) %>% 
-  mutate(id = 1:n())
-d <-
-  last.10 %>% 
-  left_join(st) #%>% 
-  #filter(ar >= 2010)
-
-d2 <-
-  d %>% 
-  mutate(ar2 = factor(ar))
-
-d2 %>% 
-  select(index, id, larett_opnun) %>% 
-  ggplot(aes(reorder(index, id), larett_opnun)) +
-  geom_violin(scale = "width", colour = "grey") +
-  geom_point(data = d2 %>% filter(ar >= 2014), aes(colour = ar2, group = ar2)) +
-  geom_line(data = d2 %>% filter(ar >= 2014), aes(colour = ar2, group = ar2), lwd = 1) +
-  scale_colour_brewer(palette = "Set1") +
-  labs(x = "Reitur-tognúmer", y = "Lárétt opnun", colour = "?r") +
-  coord_flip()
+renderPlot({
+  last.20 %>% 
+    filter(leidangur == input$Leidangur) %>% 
+    ggplot(aes(reorder(index, id), value)) +
+    theme_bw() +
+    geom_violin(scale = "width", colour = "grey") +
+    geom_point(data = last.20 %>% filter(ar >= 2014, leidangur == input$Leidangur), aes(colour = factor(ar), group = factor(ar))) +
+    geom_line(data = last.20 %>% filter(ar >= 2014, leidangur == input$Leidangur), aes(colour = factor(ar), group = factor(ar))) +
+    scale_colour_brewer(palette = "Set1") +
+    facet_wrap(~ variable, scale = "free_x") +
+    theme(legend.position = c(0.8, 0.2)) +
+    coord_flip() +
+    labs(y = NULL, x = NULL, colour = "Year")
+})
 ```
-
-Column
--------------------------------------
-
-### Lóðrétt opnum - siðustu 40 stöðvar
-
-```{r}
-last.10 <- 
-  st %>% 
-  filter(index %in% index.done) %>% 
-  arrange(-stod) %>% 
-  slice(1:40) %>% 
-  arrange(togbyrjun) %>% 
-  select(index) %>% 
-  mutate(id = 1:n())
-d <-
-  last.10 %>% 
-  left_join(st) #%>% 
-  #filter(ar >= 2010)
-
-d2 <-
-  d %>% 
-  mutate(ar2 = factor(ar))
-
-d2 %>% 
-  select(index, id, lodrett_opnun) %>% 
-  ggplot(aes(reorder(index, id), lodrett_opnun)) +
-  geom_violin(scale = "width", colour = "grey") +
-  geom_point(data = d2 %>% filter(ar >= 2014), aes(colour = ar2, group = ar2)) +
-  geom_line(data = d2 %>% filter(ar >= 2014), aes(colour = ar2, group = ar2), lwd = 1) +
-  scale_colour_brewer(palette = "Set1") +
-  labs(x = "Reitur-tognúmer", y = "Lóðrétt opnun", colour = "?r") +
-  coord_flip()
-
-```
-
 
 
 Surf and turf
