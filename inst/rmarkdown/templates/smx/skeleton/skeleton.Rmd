@@ -314,7 +314,9 @@ Column {.tabset}
 renderPlot({
   d <- 
     kv.this.year %>%
-    filter(tegund == as.numeric(input$Species))
+    left_join(st %>% select(synis_id, leidangur)) %>% 
+    filter(tegund == as.numeric(input$Species),
+           leidangur == input$Leidangur)
   ggplot() +
     theme_grey(base_size = 16) +
     geom_ribbon(data = stadlar.lw %>% filter(tegund == as.numeric(input$Species)),
@@ -341,7 +343,9 @@ renderPlot({
 renderPlot({
   d <- 
     kv.this.year %>% 
-    filter(tegund == as.numeric(input$Species)) #%>% 
+    left_join(st %>% select(synis_id, leidangur)) %>% 
+    filter(tegund == as.numeric(input$Species),
+           leidangur == input$Leidangur)
   ggplot() +
     theme_grey(base_size = 16) +
     geom_ribbon(data = stadlar.lw %>% filter(tegund == as.numeric(input$Species)),
@@ -365,7 +369,9 @@ renderPlot({
     filter(tegund == as.numeric(input$Species))
   d <- 
     kv.this.year %>% 
-    filter(tegund == as.numeric(input$Species))
+    left_join(st %>% select(synis_id, leidangur)) %>% 
+    filter(tegund == as.numeric(input$Species),
+           leidangur == input$Leidangur)
   ggplot() +
     theme_grey(base_size = 16) +
     geom_hline(yintercept = 1, colour = "red", lwd = 2) +
@@ -385,7 +391,9 @@ renderPlot({
 renderPlot({
   d <- 
     kv.this.year %>% 
-    filter(tegund == as.numeric(input$Species))
+    left_join(st %>% select(synis_id, leidangur)) %>% 
+    filter(tegund == as.numeric(input$Species),
+           leidangur == input$Leidangur)
   ggplot() +
     theme_grey(base_size = 16) +
     #geom_hline(yintercept = 1, colour = "red", lwd = 2) +
@@ -405,7 +413,9 @@ renderPlot({
 renderPlot({
   d <- 
     kv.this.year %>% 
-    filter(tegund == as.numeric(input$Species))
+    left_join(st %>% select(synis_id, leidangur)) %>% 
+    filter(tegund == as.numeric(input$Species),
+           leidangur == input$Leidangur)
   ggplot() +
     theme_grey(base_size = 16) +
     #geom_hline(yintercept = 1, colour = "red", lwd = 2) +
@@ -430,7 +440,8 @@ Column {.tabset}
 ```{r}
 DT::renderDataTable({
   le.this.year %>% 
-    filter(!ok.l) %>%
+    filter(!ok.l,
+           leidangur == input$Leidangur) %>%
     select(-c(synis_id, index)) %>% 
     arrange(leidangur, stod, tegund) %>% 
     DT::datatable(extensions = 'Scroller',
@@ -444,14 +455,17 @@ DT::renderDataTable({
 
 ```
 
-### Kvarnir - eftir tegundum
 
-```{r}
+
+```{r, eval = FALSE}
+### Kvarnir - eftir tegundum
 DT::renderDataTable({
   d <- 
     kv.this.year %>% 
+    left_join(st %>% select(synis_id, leidangur)) %>% 
     filter(tegund == as.numeric(input$Species),
-           (!ok.l.osl | !ok.l.sl | !ok.sl.osl | !ok.kirtlar.osl | !ok.lifur.osl)) %>%
+           (!ok.l.osl | !ok.l.sl | !ok.sl.osl | !ok.kirtlar.osl | !ok.lifur.osl),
+           leidangur == input$Leidangur) %>%
     left_join(st %>% select(synis_id, leidangur, stod)) %>% 
     select(leidangur, stod, index, nr, lengd, oslaegt, slaegt, kynfaeri, lifur, ok.l.osl:ok.lifur.osl)
   d %>% 
@@ -476,7 +490,9 @@ DT::renderDataTable({
 DT::renderDataTable({
   d <- 
     kv.this.year %>% 
-    filter((!ok.l.osl | !ok.l.sl | !ok.sl.osl | !ok.kirtlar.osl | !ok.lifur.osl)) %>%
+    left_join(st %>% select(synis_id, leidangur)) %>% 
+    filter((!ok.l.osl | !ok.l.sl | !ok.sl.osl | !ok.kirtlar.osl | !ok.lifur.osl),
+           leidangur == input$Leidangur) %>%
     left_join(st %>% select(synis_id, leidangur, stod)) %>% 
     select(leidangur, stod, index, tegund, nr, lengd, oslaegt, slaegt, kynfaeri, lifur, magi, ok.l.osl:ok.lifur.osl)
   d %>% 
