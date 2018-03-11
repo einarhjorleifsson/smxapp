@@ -311,7 +311,7 @@ renderPlot({
     kv.this.year %>%
     left_join(st %>% select(synis_id, leidangur)) %>% 
     filter(tegund == as.numeric(input$Species),
-           leidangur == input$Leidangur)
+           leidangur %in% input$Leidangur)
   ggplot() +
     theme_grey(base_size = 16) +
     geom_ribbon(data = stadlar.lw %>% filter(tegund == as.numeric(input$Species)),
@@ -340,7 +340,7 @@ renderPlot({
     kv.this.year %>% 
     left_join(st %>% select(synis_id, leidangur)) %>% 
     filter(tegund == as.numeric(input$Species),
-           leidangur == input$Leidangur)
+           leidangur %in% input$Leidangur)
   ggplot() +
     theme_grey(base_size = 16) +
     geom_ribbon(data = stadlar.lw %>% filter(tegund == as.numeric(input$Species)),
@@ -366,7 +366,7 @@ renderPlot({
     kv.this.year %>% 
     left_join(st %>% select(synis_id, leidangur)) %>% 
     filter(tegund == as.numeric(input$Species),
-           leidangur == input$Leidangur)
+           leidangur %in% input$Leidangur)
   ggplot() +
     theme_grey(base_size = 16) +
     geom_hline(yintercept = 1, colour = "red", lwd = 2) +
@@ -388,7 +388,7 @@ renderPlot({
     kv.this.year %>% 
     left_join(st %>% select(synis_id, leidangur)) %>% 
     filter(tegund == as.numeric(input$Species),
-           leidangur == input$Leidangur)
+           leidangur %in% input$Leidangur)
   ggplot() +
     theme_grey(base_size = 16) +
     #geom_hline(yintercept = 1, colour = "red", lwd = 2) +
@@ -410,7 +410,7 @@ renderPlot({
     kv.this.year %>% 
     left_join(st %>% select(synis_id, leidangur)) %>% 
     filter(tegund == as.numeric(input$Species),
-           leidangur == input$Leidangur)
+           leidangur %in% input$Leidangur)
   ggplot() +
     theme_grey(base_size = 16) +
     #geom_hline(yintercept = 1, colour = "red", lwd = 2) +
@@ -436,7 +436,7 @@ Column {.tabset}
 DT::renderDataTable({
   le.this.year %>% 
     filter(!ok.l,
-           leidangur == input$Leidangur) %>%
+           leidangur %in% input$Leidangur) %>%
     select(-c(synis_id, index)) %>% 
     arrange(leidangur, stod, tegund) %>% 
     DT::datatable(extensions = 'Scroller',
@@ -460,7 +460,7 @@ DT::renderDataTable({
     left_join(st %>% select(synis_id, leidangur)) %>% 
     filter(tegund == as.numeric(input$Species),
            (!ok.l.osl | !ok.l.sl | !ok.sl.osl | !ok.kirtlar.osl | !ok.lifur.osl),
-           leidangur == input$Leidangur) %>%
+           leidangur %in% input$Leidangur) %>%
     left_join(st %>% select(synis_id, leidangur, stod)) %>% 
     select(leidangur, stod, index, nr, lengd, oslaegt, slaegt, kynfaeri, lifur, ok.l.osl:ok.lifur.osl)
   d %>% 
@@ -487,7 +487,7 @@ DT::renderDataTable({
     kv.this.year %>% 
     left_join(st %>% select(synis_id, leidangur)) %>% 
     filter((!ok.l.osl | !ok.l.sl | !ok.sl.osl | !ok.kirtlar.osl | !ok.lifur.osl),
-           leidangur == input$Leidangur) %>%
+           leidangur %in% input$Leidangur) %>%
     left_join(st %>% select(synis_id, leidangur, stod)) %>% 
     select(leidangur, stod, index, tegund, nr, lengd, oslaegt, slaegt, kynfaeri, lifur, magi, ok.l.osl:ok.lifur.osl)
   d %>% 
@@ -517,7 +517,7 @@ Column {.tabset}
 renderPlot({
   d <-
     last.20 %>% 
-    filter(leidangur == input$Leidangur,
+    filter(leidangur %in% input$Leidangur,
            variable %in% c("larett_opnun", "lodrett_opnun", "vir_uti"))
   d2 <- 
     d %>% 
@@ -547,7 +547,7 @@ renderPlot({
 renderPlot({
   d <-
     last.20 %>% 
-    filter(leidangur == input$Leidangur,
+    filter(leidangur %in% input$Leidangur,
            variable %in% c("botnhiti", "yfirbordshiti"))
   d2 <- 
     d %>% 
@@ -578,7 +578,7 @@ renderPlot({
   
   d <-
     st.dummy %>% 
-    filter(leidangur == input$Leidangur,
+    filter(leidangur %in% input$Leidangur,
            variable %in% c("larett_opnun", "lodrett_opnun", "vir_uti")) 
   d.median <- 
     d %>% 
@@ -605,7 +605,7 @@ renderPlot({
   
     d <-
     st.dummy %>% 
-    filter(leidangur == input$Leidangur,
+    filter(leidangur %in% input$Leidangur,
            variable %in% c("botnhiti", "yfirbordshiti")) 
   d.median <- 
     d %>% 
