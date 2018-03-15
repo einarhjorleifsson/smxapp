@@ -195,6 +195,10 @@ munge_for_smxapp <- function(res, cruise, rda.file = "smb_dashboard.rda") {
   by.station.boot <-
     bind_rows(by.station.boot.n, by.station.boot.b)
 
+  #-----------------------------------------------------------------------
+  # New stuff: boot station and then calc uncertainty by length
+
+
   # Do for all stations -------------------------------------------------
   by.station.all <-
     st %>%
@@ -205,26 +209,26 @@ munge_for_smxapp <- function(res, cruise, rda.file = "smb_dashboard.rda") {
               b.std = sum(b.std, na.rm = TRUE)) %>%
     ungroup()
 
-  print("Hartoga fjolda - all")
-
-  by.station.boot.n.all <-
-    by.station.all %>%
-    group_by(tegund, ar) %>%
-    do(my_boot(.$n.std)) %>%
-    mutate(variable = "n",
-           var = as.character(var))
-
-  print("Hartoga thyngd - all")
-
-  by.station.boot.b.all <-
-    by.station.all %>%
-    group_by(tegund, ar) %>%
-    do(my_boot(.$b.std)) %>%
-    mutate(variable = "b",
-           var = as.character(var))
-
-  by.station.boot.all <-
-    bind_rows(by.station.boot.n.all, by.station.boot.b.all)
+  # print("Hartoga fjolda - all")
+  #
+  # by.station.boot.n.all <-
+  #   by.station.all %>%
+  #   group_by(tegund, ar) %>%
+  #   do(my_boot(.$n.std)) %>%
+  #   mutate(variable = "n",
+  #          var = as.character(var))
+  #
+  # print("Hartoga thyngd - all")
+  #
+  # by.station.boot.b.all <-
+  #   by.station.all %>%
+  #   group_by(tegund, ar) %>%
+  #   do(my_boot(.$b.std)) %>%
+  #   mutate(variable = "b",
+  #          var = as.character(var))
+  #
+  # by.station.boot.all <-
+  #   bind_rows(by.station.boot.n.all, by.station.boot.b.all)
 
 
   print("Vidoma dot")
@@ -305,7 +309,7 @@ munge_for_smxapp <- function(res, cruise, rda.file = "smb_dashboard.rda") {
        by.tegund.lengd.ar, by.tegund.lengd.ar.m,
        by.station, fisktegundir,
        by.station.boot,
-       by.station.boot.all,
+       #by.station.boot.all,
        file = paste0("data2/", rda.file))
 
   print("Ormurinn hefur lokid ser af")

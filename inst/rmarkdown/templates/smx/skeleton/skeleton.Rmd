@@ -30,7 +30,7 @@ res <- import_smx(con)
 library(smxapp)
 # The cruise argument below can be changed. E.g. if on only wants to look at the
 # data for Hjalteyrin then the argument would simply be cruise = c("TH1-2018")
-munge_for_smxapp(res, cruise = c("A4-2018", "TL1-2018", "TH1-2018", "B3-2018"))
+munge_for_smxapp(res, cruise = c("A4-2018", "TL1-2018", "TH1-2018", "B4-2018"))
 ```
 
 ```{r global, include=FALSE}
