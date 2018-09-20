@@ -11,7 +11,10 @@
 # cruise = c("A4-2018", "TL1-2018", "TH1-2018", "B3-2018")
 munge_for_smxapp <- function(res, cruise, rda.file = "smb_dashboard.rda") {
 
-  now.year <- lubridate::now() %>% lubridate::year()
+  now.year <-
+    data_frame(x = cruise[[1]]) %>%
+    separate(x, c("ship", "year"), sep = "-", convert = TRUE) %>%
+    pull(year)
 
 
   min.towlength <- 2             # Minimum "acceptable" towlength
@@ -25,7 +28,7 @@ munge_for_smxapp <- function(res, cruise, rda.file = "smb_dashboard.rda") {
 
   st <-
     st %>%
-    filter((ar == 2018 & leidangur %in% cruise) | ar < 2018)
+    filter((ar == now.year & leidangur %in% cruise) | ar < now.year)
   index.done <-
     st %>%
     filter(leidangur %in% cruise) %>%
@@ -234,7 +237,9 @@ munge_for_smxapp <- function(res, cruise, rda.file = "smb_dashboard.rda") {
   print("Vidoma dot")
 
   library(sp)
-  tows <- stadlar.rallstodvar
+  tows <-
+    stadlar.rallstodvar %>%
+    drop_na(kastad_v, kastad_n, hift_v, hift_n)
 
   tows$id2 <- 1:nrow(tows)
   x1 <-
