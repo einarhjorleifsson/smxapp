@@ -301,7 +301,8 @@ munge_for_smxapp <- function(res, cruise, rda.file = "smb_dashboard.rda") {
   print("Vistun")
 
   dir.create("data2", showWarnings = FALSE)
-  save(index.done,
+  save(now.year,
+       index.done,
        stadlar.rallstodvar.sp,
        st.done.sp,
        st,
