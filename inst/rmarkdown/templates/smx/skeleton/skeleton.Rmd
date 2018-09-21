@@ -54,17 +54,17 @@ x <-
   select(tegund, val)
 my.species <- as.list(x$tegund)
 names(my.species) <- x$val
-x <- st %>% filter(ar == 2018) %>% select(leidangur) %>% distinct()
+x <- st %>% filter(ar == now.year) %>% select(leidangur) %>% distinct()
 my.cruises <- as.list(x$leidangur)
 names(my.cruises) <- x$leidangur
 # For debugging input <- data_frame(Species = 1, Type = "Numbers")
 
 index.done.cruise <-
   data_frame(index = index.done) %>% 
-  left_join(st %>% filter(ar == 2018) %>% select(leidangur, stod, index, togbyrjun))
+  left_join(st %>% filter(ar == now.year) %>% select(leidangur, stod, index, togbyrjun))
 last.20 <-
   st %>%  
-  filter(ar == 2018) %>% 
+  filter(ar == now.year) %>% 
   arrange(leidangur, desc(togbyrjun)) %>% 
   group_by(leidangur) %>% 
   slice(1:20) %>% 
@@ -78,7 +78,7 @@ last.20 <-
 st.dummy <-
   st %>%  
   filter(index %in% index.done,
-         ar == 2018) %>% 
+         ar == now.year) %>% 
   select(leidangur, index) %>% 
   left_join(st %>% select(index, ar, larett_opnun, lodrett_opnun,
                           botnhiti, yfirbordshiti, vir_uti)) %>%
@@ -203,17 +203,17 @@ renderPlot({
 ```
 
 
-### Afli í staðaltogi árið 2018
+### Afli í staðaltogi árið `r now.year`
 
 
 ```{r}
 renderLeaflet({
   
-  x0 <- by.station %>% filter(ar == 2018) %>% select(lon, lat) %>% distinct()
+  x0 <- by.station %>% filter(ar == now.year) %>% select(lon, lat) %>% distinct()
   if(input$Type == "Numbers") {
     x <- 
       by.station %>% 
-      filter(ar == 2018,
+      filter(ar == now.year,
              tegund == as.numeric(input$Species),
              n.std > 0) %>% 
       select(lon, lat, n.std) %>% 
@@ -232,7 +232,7 @@ renderLeaflet({
   } else {
     x <- 
       by.station %>% 
-      filter(ar == 2018,
+      filter(ar == now.year,
              b.std > 0,
              tegund == as.numeric(input$Species)) %>% 
       select(lon, lat, b.std) %>% 
@@ -262,7 +262,7 @@ Dreifing
 renderPlot({
   if(input$Type == "Numbers") {
     by.station %>% 
-      filter(ar %in% c(1985, 1990, 1995, 2000, seq(2005, 2015, by = 2), 2017, 2018),
+      filter(ar %in% c(1985, 1990, 1995, 2000, seq(2005, 2015, by = 2), now.year-1, now.year),
              tegund == as.numeric(input$Species)) %>% 
       ggplot() +
       theme_grey(base_size = 16) +
@@ -277,7 +277,7 @@ renderPlot({
       facet_wrap(~ ar, nrow = 3)
   } else {
     by.station %>% 
-      filter(ar %in% c(1985, 1990, 1995, 2000, seq(2005, 2015, by = 2), 2017, 2018),
+      filter(ar %in% c(1985, 1990, 1995, 2000, seq(2005, 2015, by = 2), now.year - 1, now.year),
              tegund == as.numeric(input$Species)) %>% 
       ggplot() +
       theme_grey(base_size = 16) +
@@ -521,10 +521,10 @@ renderPlot({
            variable %in% c("larett_opnun", "lodrett_opnun", "vir_uti"))
   d2 <- 
     d %>% 
-    filter(ar %in% 2013:2017)
+    filter(ar %in% 2013:(now.year - 1))
   d3 <-
     d %>% 
-    filter(ar %in% 2018)
+    filter(ar %in% now.year)
     
   d %>% 
     ggplot(aes(reorder(index, id), value)) +
@@ -551,10 +551,10 @@ renderPlot({
            variable %in% c("botnhiti", "yfirbordshiti"))
   d2 <- 
     d %>% 
-    filter(ar %in% 2013:2017)
+    filter(ar %in% 2013:(now.year - 1))
   d3 <-
     d %>% 
-    filter(ar %in% 2018)
+    filter(ar %in% now.year)
     
   d %>% 
     ggplot(aes(reorder(index, id), value)) +
@@ -636,7 +636,7 @@ renderLeaflet({
     leaflet(stadlar.rallstodvar.sp) %>% 
     addTiles() %>% 
     addPolylines(color = "red", weight = 10)
-  years <- as.character(2018:2015)
+  years <- as.character(now.year:(now.year - 3))
   for(i in 1:length(years)) {
     
     if(i == 1) {
@@ -668,8 +668,8 @@ Af aflabrögðum
 DT::renderDataTable({
   x <- 
     by.station %>% 
-    filter(ar == 2018) %>% 
-    left_join(st %>% filter(ar == 2018) %>% select(index, leidangur)) %>% 
+    filter(ar == now.year) %>% 
+    left_join(st %>% filter(ar == now.year) %>% select(index, leidangur)) %>% 
     group_by(leidangur, tegund) %>% 
     summarise(n = round(sum(n.std), 0),
               b = round(sum(b.std), 0)) %>% 
