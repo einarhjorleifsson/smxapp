@@ -1,5 +1,5 @@
 ---
-title: "Mælaborð íslenzkra rall"
+title: "Mælaborð íslenzkra ralla"
 output: flexdashboard::flex_dashboard
 runtime: shiny
 ---
