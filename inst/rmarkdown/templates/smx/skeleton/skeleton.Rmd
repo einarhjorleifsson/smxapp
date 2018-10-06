@@ -1,5 +1,5 @@
 ---
-title: "Mælaborð hins íslenzka vorralls"
+title: "Mælaborð íslenzkra rall"
 output: flexdashboard::flex_dashboard
 runtime: shiny
 ---
@@ -17,7 +17,10 @@ library(sp)
 library(ROracle)
 library(xe)
 con <- connect_xe()
-res <- import_smx(con)
+
+# Specify the synaflokkur using the id and the gear using the gid. Below
+#  applies to SMH.
+res <- import_smx(con, id = 35, gid = c(77, 78))
 # Note, from the above code we could proceed with scutinizing the data. The object
 #   res is a list that contains res$st, res$nu, res$le, res$kv of all the past 
 #   spring survey tows and then the current one that reside in Hafvog
@@ -30,7 +33,7 @@ res <- import_smx(con)
 library(smxapp)
 # The cruise argument below can be changed. E.g. if on only wants to look at the
 # data for Hjalteyrin then the argument would simply be cruise = c("TH1-2018")
-munge_for_smxapp(res, cruise = c("A4-2018", "TL1-2018", "TH1-2018", "B4-2018"))
+munge_for_smxapp(res, cruise = c("TL2-2018"))
 ```
 
 ```{r global, include=FALSE}
