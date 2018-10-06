@@ -102,6 +102,9 @@ munge_for_smxapp <- function(res, cruise, rda.file = "smb_dashboard.rda") {
     ungroup()
   x <-
     by.tegund.lengd.ar %>%
+    # code added because of bug in TL2-2018
+    select(tegund, lengd) %>%
+    drop_na() %>%
     group_by(tegund) %>%
     summarise(n = n(),
               l.min = min(lengd),
