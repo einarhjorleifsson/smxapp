@@ -11,6 +11,7 @@
 # cruise = c("A4-2018", "TL1-2018", "TH1-2018", "B3-2018")
 munge_for_smxapp <- function(res, cruise, rda.file = "smb_dashboard.rda") {
 
+  print("Various calculations")
   now.year <-
     data_frame(x = cruise[[1]]) %>%
     separate(x, c("ship", "year"), sep = "-", convert = TRUE) %>%
@@ -57,6 +58,7 @@ munge_for_smxapp <- function(res, cruise, rda.file = "smb_dashboard.rda") {
            index %in% index.done) %>%
     select(synis_id, leidangur, stod, index) %>%
     left_join(le, by = "synis_id")
+  print("Extractions done")
 
   le <-
     le %>%
@@ -71,6 +73,7 @@ munge_for_smxapp <- function(res, cruise, rda.file = "smb_dashboard.rda") {
            n.std = n.rai * std.towlength/toglengd,
            b.std  = ifelse(is.na(n.std), 0, n.rai) * 0.00001 * lengd^3) %>%
     select(synis_id, ar, reitur, tognumer, toglengd, tegund:n.rai, n.std, b.std)
+  print("Length compilation done")
 
 
   # B. STADLAR -----------------------------------------------------------------
@@ -79,6 +82,7 @@ munge_for_smxapp <- function(res, cruise, rda.file = "smb_dashboard.rda") {
   stadlar.tegundir <-    other.stuff$stadlar.tegundir
   stadlar.lw <- other.stuff$stadlar.lw
   fisktegundir <- other.stuff$fisktegundir
+  print("Importing of auxillary tables done")
 
   # IMPORT
   # ----------------------------------------------------------------------------
@@ -88,8 +92,6 @@ munge_for_smxapp <- function(res, cruise, rda.file = "smb_dashboard.rda") {
   # DATA MUNGING
 
   # A. STATIONS DONE - FOR DASHBOARD
-  print("Reikna allskonar dot")
-
 
   by.tegund.lengd.ar <-
     st %>%
@@ -131,6 +133,7 @@ munge_for_smxapp <- function(res, cruise, rda.file = "smb_dashboard.rda") {
               n.std = sum(n.std, na.rm = TRUE) / n.year,
               b.std = sum(b.std, na.rm = TRUE) / n.year) %>%
     ungroup()
+  print("Length summation 1 done")
 
   by.station <-
     st %>%
@@ -141,6 +144,7 @@ munge_for_smxapp <- function(res, cruise, rda.file = "smb_dashboard.rda") {
     summarise(n.std = sum(n.std, na.rm = TRUE),
               b.std = sum(b.std, na.rm = TRUE)) %>%
     ungroup()
+  print("Station summation done")
 
   kv.this.year <-
     st %>%
@@ -160,12 +164,14 @@ munge_for_smxapp <- function(res, cruise, rda.file = "smb_dashboard.rda") {
            ok.lifur.osl = if_else(lifur/oslaegt >= lifur_low & lifur/oslaegt <= lifur_high, TRUE, FALSE, TRUE),
            ok.magir.osl = if_else(magi/oslaegt  >= magi_low & magi/oslaegt <= magi_high, TRUE, FALSE, TRUE)) %>%
     select(-c(kynkirtlar_high:oslaegt_vigtad_low))
+  print("Otolith summation done")
 
   le.this.year <-
     le.this.year %>%
     left_join(stadlar.tegundir %>% select(tegund, lengd_low, lengd_high)) %>%
     mutate(ok.l = if_else(lengd >= lengd_low & lengd <= lengd_high, TRUE, FALSE, TRUE)) %>%
     select(-c(lengd_low, lengd_high))
+  print("Length summation 2 done")
 
   my_boot = function(x, times=100) {
 
@@ -180,7 +186,7 @@ munge_for_smxapp <- function(res, cruise, rda.file = "smb_dashboard.rda") {
     data.frame(var, n=length(x), mean=mean(x), lower.ci=cis[1], upper.ci=cis[2])
   }
 
-  print("Hartoga fjolda")
+  print("Bootstrapping abundance:")
 
   by.station.boot.n <-
     by.station %>%
@@ -189,7 +195,7 @@ munge_for_smxapp <- function(res, cruise, rda.file = "smb_dashboard.rda") {
     mutate(variable = "n",
            var = as.character(var))
 
-  print("Hartoga thyngd")
+  print("Bootstrapping biomass:")
 
   by.station.boot.b <-
     by.station %>%
@@ -215,26 +221,7 @@ munge_for_smxapp <- function(res, cruise, rda.file = "smb_dashboard.rda") {
               b.std = sum(b.std, na.rm = TRUE)) %>%
     ungroup()
 
-  # print("Hartoga fjolda - all")
-  #
-  # by.station.boot.n.all <-
-  #   by.station.all %>%
-  #   group_by(tegund, ar) %>%
-  #   do(my_boot(.$n.std)) %>%
-  #   mutate(variable = "n",
-  #          var = as.character(var))
-  #
-  # print("Hartoga thyngd - all")
-  #
-  # by.station.boot.b.all <-
-  #   by.station.all %>%
-  #   group_by(tegund, ar) %>%
-  #   do(my_boot(.$b.std)) %>%
-  #   mutate(variable = "b",
-  #          var = as.character(var))
-  #
-  # by.station.boot.all <-
-  #   bind_rows(by.station.boot.n.all, by.station.boot.b.all)
+
 
 
   print("Vidoma dot")
@@ -301,7 +288,7 @@ munge_for_smxapp <- function(res, cruise, rda.file = "smb_dashboard.rda") {
 
   timi <- lubridate::now() %>% as.character()
 
-  print("Vistun")
+  print("Saving")
 
   dir.create("data2", showWarnings = FALSE)
   save(now.year,
@@ -321,7 +308,9 @@ munge_for_smxapp <- function(res, cruise, rda.file = "smb_dashboard.rda") {
        #by.station.boot.all,
        file = paste0("data2/", rda.file))
 
-  print("Ormurinn hefur lokid ser af")
+  print(paste0("Data saved as data2/", rda.file))
+
+  print("HURRA")
 
 
 }
