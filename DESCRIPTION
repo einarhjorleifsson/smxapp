@@ -1,8 +1,8 @@
 Package: smxapp
 Type: Package
 Title: A template drial
-Version: 0.0.6.9001
-Date: 2018-10-08
+Version: 0.0.7.9001
+Date: 2018-10-09
 Authors@R:
   c(person("Einar", "Hjorleifsson", email = "einarhjorleifsson@gmail.com",role = c("aut", "cre")))
 Maintainer: Einar Hjorleifsson <einar.hjorleifsson@gmail.com>

@@ -168,7 +168,9 @@ munge_for_smxapp <- function(res, cruise, rda.file = "smb_dashboard.rda") {
 
   le.this.year <-
     le.this.year %>%
-    left_join(stadlar.tegundir %>% select(tegund, lengd_low, lengd_high)) %>%
+    left_join(stadlar.tegundir %>%
+                select(tegund, lengd_low, lengd_high),
+              by = "tegund") %>%
     mutate(ok.l = if_else(lengd >= lengd_low & lengd <= lengd_high, TRUE, FALSE, TRUE)) %>%
     select(-c(lengd_low, lengd_high))
   print("Length summation 2 done")
@@ -224,7 +226,7 @@ munge_for_smxapp <- function(res, cruise, rda.file = "smb_dashboard.rda") {
 
 
 
-  print("Vidoma dot")
+  print("Spatial stuff")
 
   library(sp)
   tows <-
