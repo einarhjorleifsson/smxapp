@@ -25,6 +25,7 @@ library(lubridate)
 library(sp)
 library(ROracle)
 library(xe)
+library(smxapp)
 
 # Specify the synaflokkur using the id and the gear using the gid. E.g.:
 #         id   gid
@@ -34,7 +35,6 @@ library(xe)
 
 res <- import_smx(id = 30, gid = c(73))
 
-
 # Note, from the above code we could proceed with scutinizing the data. The object
 #   res is a list of dataframes and then some lists (names can be viewed by names(res))
 #
@@ -43,7 +43,6 @@ res <- import_smx(id = 30, gid = c(73))
 #   The function ends by generating a data-binary file (data2/smb_dashboard.rda)
 #   that is loaded (see load("data2/smb_dashboard.rda") in the next chunk
 #   when the "Run Document" is pressed
-library(smxapp)
 # The cruise argument below can be changed. E.g. if on only wants to look at the
 # data for Ljósafell 2019 then the argument would simply be cruise = c("TL1-2019")
 munge_for_smxapp(res, cruise = c("TL1-2019"))
