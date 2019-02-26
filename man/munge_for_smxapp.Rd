@@ -2,7 +2,7 @@
 % Please edit documentation in R/munge_for_smxapp.R
 \name{munge_for_smxapp}
 \alias{munge_for_smxapp}
-\title{Create R-binary bundle for the smxapp}
+\title{munge_for_smxapp}
 \usage{
 munge_for_smxapp(res, cruise, rda.file = "smb_dashboard.rda")
 }

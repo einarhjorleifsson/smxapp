@@ -14,9 +14,10 @@ License: GPL (>= 2)
 LazyData: TRUE
 URL: http://github.com/fishvice/xe
 BugReports: http://github.com/xe/mar/issues
+Encoding: UTF-8
 Suggests:
     bookdown,
     knitr,
     rmarkdown
 VignetteBuilder: knitr
-RoxygenNote: 6.0.1
+RoxygenNote: 6.1.1

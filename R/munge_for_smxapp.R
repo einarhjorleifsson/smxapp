@@ -1,4 +1,6 @@
-#' Create R-binary bundle for the smxapp
+#' @title munge_for_smxapp
+#'
+#' @description Create R-binary bundle for the smxapp
 #'
 #' @param res a list contain st, nu, le and kv and other things. The object is
 #' generated via function import_smx (in the xe-package)
@@ -8,14 +10,53 @@
 #'
 #' @export
 #'
-# cruise = c("A4-2018", "TL1-2018", "TH1-2018", "B3-2018")
 munge_for_smxapp <- function(res, cruise, rda.file = "smb_dashboard.rda") {
+
+  dir.create("data2", showWarnings = FALSE)
+
+  print("Byrjum a mogum")
+  hv_pred <-
+    res$skraning %>%
+    dplyr::filter(!is.na(magaastand)) %>%
+    dplyr::select(synis_id,
+                  pred = tegund,
+                  nr,
+                  oslaegt,
+                  slaegt,
+                  astand = magaastand)
+  hv_prey <-
+    res$skraning %>%
+    dplyr::filter(maeliadgerd %in% c(20, 21)) %>%
+    dplyr::rename(prey = tegund,
+                  pred = ranfiskurteg,
+                  pnr = nr,
+                  nr = kvarnanr) %>%
+    dplyr::left_join(res$other.stuff$fisktegundir %>%
+                       select(prey = tegund, heiti)) %>%
+    dplyr::select(synis_id,
+                  pred,
+                  nr,
+                  prey = heiti,
+                  #heiti,
+                  pnr,
+                  n = fjoldi,
+                  lengd,
+                  kyn,
+                  thyngd = heildarthyngd)
+  hv_pred %>%
+    dplyr::left_join(hv_prey) %>%
+    dplyr::left_join(res$st %>%
+                       select(synis_id, leidangur, stod)) %>%
+    dplyr::select(leidangur, stod, pred:thyngd) %>%
+    readr::write_rds("data2/pp.rds")
+
+  res2 <- res
 
   print("Various calculations")
   now.year <-
-    data_frame(x = cruise[[1]]) %>%
-    separate(x, c("ship", "year"), sep = "-", convert = TRUE) %>%
-    pull(year)
+    dplyr::tibble(x = cruise[[1]]) %>%
+    tidyr::separate(x, c("ship", "year"), sep = "-", convert = TRUE) %>%
+    dplyr::pull(year)
 
 
   min.towlength <- 2             # Minimum "acceptable" towlength
@@ -29,35 +70,35 @@ munge_for_smxapp <- function(res, cruise, rda.file = "smb_dashboard.rda") {
 
   st <-
     st %>%
-    filter((ar == now.year & leidangur %in% cruise) | ar < now.year)
+    dplyr::filter((ar == now.year & leidangur %in% cruise) | ar < now.year)
   index.done <-
     st %>%
-    filter(leidangur %in% cruise) %>%
-    pull(index)
+    dplyr::filter(leidangur %in% cruise) %>%
+    dplyr::pull(index)
 
   i <- stringr::str_locate(st$leidangur, "-")[,1]
   st <-
     st %>%
-    mutate(leidstod = paste0(stringr::str_sub(leidangur, 1, i), stod))
+    dplyr::mutate(leidstod = paste0(stringr::str_sub(leidangur, 1, i), stod))
 
   nu <-
     nu %>%
-    complete(synis_id, tegund) %>%
-    replace_na(list(fj_maelt = 0, fj_talid = 0, fj_alls = 0))
+    tidyr::complete(synis_id, tegund) %>%
+    tidyr::replace_na(list(fj_maelt = 0, fj_talid = 0, fj_alls = 0))
 
   nu.this.year <-
     st %>%
-    filter(ar == now.year,
-           index %in% index.done) %>%
-    select(synis_id, leidangur, stod) %>%
-    left_join(nu, by = "synis_id")
+    dplyr::filter(ar == now.year,
+                  index %in% index.done) %>%
+    dplyr::select(synis_id, leidangur, stod) %>%
+    dplyr::left_join(nu, by = "synis_id")
 
   le.this.year <-
     st %>%
-    filter(ar == now.year,
-           index %in% index.done) %>%
-    select(synis_id, leidangur, stod, index) %>%
-    left_join(le, by = "synis_id")
+    dplyr::filter(ar == now.year,
+                  index %in% index.done) %>%
+    dplyr::select(synis_id, leidangur, stod, index) %>%
+    dplyr::left_join(le, by = "synis_id")
   print("Extractions done")
 
   le <-
@@ -95,39 +136,39 @@ munge_for_smxapp <- function(res, cruise, rda.file = "smb_dashboard.rda") {
 
   by.tegund.lengd.ar <-
     st %>%
-    filter(index %in% index.done) %>%
-    select(synis_id) %>%
-    left_join(le, by = "synis_id") %>%
-    group_by(tegund, ar, lengd) %>%
-    summarise(n.std = sum(n.std, na.rm = TRUE),
-              b.std = sum(b.std, na.rm = TRUE)) %>%
-    ungroup()
+    dplyr::filter(index %in% index.done) %>%
+    dplyr::select(synis_id) %>%
+    dplyr::left_join(le, by = "synis_id") %>%
+    dplyr::group_by(tegund, ar, lengd) %>%
+    dplyr::summarise(n.std = sum(n.std, na.rm = TRUE),
+                     b.std = sum(b.std, na.rm = TRUE)) %>%
+    dplyr::ungroup()
   x <-
     by.tegund.lengd.ar %>%
     # code added because of bug in TL2-2018
-    select(tegund, lengd) %>%
-    drop_na() %>%
-    group_by(tegund) %>%
-    summarise(n = n(),
-              l.min = min(lengd),
-              l.max = max(lengd))
+    dplyr::select(tegund, lengd) %>%
+    tidyr::drop_na() %>%
+    dplyr::group_by(tegund) %>%
+    dplyr::summarise(n = n(),
+                     l.min = min(lengd),
+                     l.max = max(lengd))
   res <- list()
   for(i in 1:length(x$tegund)) {
     res[[i]] <- expand.grid(tegund = x$tegund[i],
                             lengd = x$l.min[i]:x$l.max[i],
                             ar = unique(by.tegund.lengd.ar$ar))
   }
-  x <- bind_rows(res) %>% as_tibble()
+  x <- dplyr::bind_rows(res) %>% as_tibble()
 
   by.tegund.lengd.ar <-
     x %>%
-    left_join(by.tegund.lengd.ar, by = c("tegund", "lengd", "ar")) %>%
-    mutate(n.std = ifelse(is.na(n.std), 0, n.std),
-           b.std = ifelse(is.na(b.std), 0, b.std))
+    dplyr::left_join(by.tegund.lengd.ar, by = c("tegund", "lengd", "ar")) %>%
+    dplyr::mutate(n.std = ifelse(is.na(n.std), 0, n.std),
+                  b.std = ifelse(is.na(b.std), 0, b.std))
 
   by.tegund.lengd.ar.m <-
     by.tegund.lengd.ar %>%
-    filter(ar >= 2010) %>%
+    dplyr::filter(ar >= 2010) %>%
     group_by(tegund, lengd) %>%
     summarise(n.year = n_distinct(ar),
               n.std = sum(n.std, na.rm = TRUE) / n.year,
@@ -168,11 +209,11 @@ munge_for_smxapp <- function(res, cruise, rda.file = "smb_dashboard.rda") {
 
   le.this.year <-
     le.this.year %>%
-    left_join(stadlar.tegundir %>%
-                select(tegund, lengd_low, lengd_high),
-              by = "tegund") %>%
-    mutate(ok.l = if_else(lengd >= lengd_low & lengd <= lengd_high, TRUE, FALSE, TRUE)) %>%
-    select(-c(lengd_low, lengd_high))
+    dplyr::left_join(stadlar.tegundir %>%
+                       select(tegund, lengd_low, lengd_high),
+                     by = "tegund") %>%
+    dplyr::mutate(ok.l = if_else(lengd >= lengd_low & lengd <= lengd_high, TRUE, FALSE, TRUE)) %>%
+    dplyr::select(-c(lengd_low, lengd_high))
   print("Length summation 2 done")
 
   my_boot = function(x, times=100) {
@@ -182,7 +223,7 @@ munge_for_smxapp <- function(res, cruise, rda.file = "smb_dashboard.rda") {
     var = gsub("^\\.\\$","", var)
 
     # Bootstrap 95% CI
-    cis = quantile(replicate(times, mean(sample(x, replace=TRUE))), probs=c(0.025,0.975))
+    cis = stats::quantile(replicate(times, mean(sample(x, replace=TRUE))), probs=c(0.025,0.975))
 
     # Return data frame of results
     data.frame(var, n=length(x), mean=mean(x), lower.ci=cis[1], upper.ci=cis[2])
@@ -192,22 +233,22 @@ munge_for_smxapp <- function(res, cruise, rda.file = "smb_dashboard.rda") {
 
   by.station.boot.n <-
     by.station %>%
-    group_by(tegund, ar) %>%
+    dplyr::group_by(tegund, ar) %>%
     do(my_boot(.$n.std)) %>%
-    mutate(variable = "n",
-           var = as.character(var))
+    dplyr::mutate(variable = "n",
+                  var = as.character(var))
 
   print("Bootstrapping biomass:")
 
   by.station.boot.b <-
     by.station %>%
-    group_by(tegund, ar) %>%
+    dplyr::group_by(tegund, ar) %>%
     do(my_boot(.$b.std)) %>%
-    mutate(variable = "b",
-           var = as.character(var))
+    dplyr::mutate(variable = "b",
+                  var = as.character(var))
 
   by.station.boot <-
-    bind_rows(by.station.boot.n, by.station.boot.b)
+    dplyr::bind_rows(by.station.boot.n, by.station.boot.b)
 
   #-----------------------------------------------------------------------
   # New stuff: boot station and then calc uncertainty by length
@@ -250,24 +291,24 @@ munge_for_smxapp <- function(res, cruise, rda.file = "smb_dashboard.rda") {
   }
   sp <-
     lines_list %>%
-    SpatialLines(proj4string = PRO) %>%
+    SpatialLines(proj4string = CRS("+proj=longlat +datum=WGS84 +ellps=WGS84 +towgs84=0,0,0")) %>%
     SpatialLinesDataFrame(data.frame(id = as.character(tows$id2)))
   sp@data <- cbind(sp@data, tows)
   stadlar.rallstodvar.sp <- sp
 
   tows <-
     st %>%
-    filter(index %in% index.done) %>%
-    filter(!is.na(lon1), !is.na(lat1), !is.na(lon2), !is.na(lat2))
+    dplyr::filter(index %in% index.done) %>%
+    dplyr::filter(!is.na(lon1), !is.na(lat1), !is.na(lon2), !is.na(lat2))
   tows$id2 <- 1:nrow(tows)
   x1 <-
     tows %>%
-    select(id2, lon1, lon2) %>%
-    gather(variable, value, -id2)
+    dplyr::select(id2, lon1, lon2) %>%
+    tidyr::gather(variable, value, -id2)
   x2 <-
     tows %>%
-    select(id2, lat1, lat2) %>%
-    gather(variable, value, -id2)
+    dplyr::select(id2, lat1, lat2) %>%
+    tidyr::gather(variable, value, -id2)
   x <- data.frame(id2 = x1$id2, lon = x1$value, lat = x2$value)
   lines_list <- list()
   for (i in 1:max(tows$id2)) {
@@ -276,17 +317,17 @@ munge_for_smxapp <- function(res, cruise, rda.file = "smb_dashboard.rda") {
   }
   sp <-
     lines_list %>%
-    SpatialLines(proj4string = PRO) %>%
-    SpatialLinesDataFrame(data.frame(id = as.character(tows$id2)))
+    sp::SpatialLines(proj4string = sp::CRS("+proj=longlat +datum=WGS84 +ellps=WGS84 +towgs84=0,0,0")) %>%
+    sp::SpatialLinesDataFrame(data.frame(id = as.character(tows$id2)))
   sp@data <- cbind(sp@data, tows)
   st.done.sp <- sp
 
   by.tegund.lengd.ar <-
     by.tegund.lengd.ar %>%
-    filter(lengd != 0)
+    dplyr::filter(lengd != 0)
   by.tegund.lengd.ar.m <-
     by.tegund.lengd.ar.m %>%
-    filter(lengd != 0)
+    dplyr::filter(lengd != 0)
 
   timi <- lubridate::now() %>% as.character()
 
@@ -311,6 +352,10 @@ munge_for_smxapp <- function(res, cruise, rda.file = "smb_dashboard.rda") {
        file = paste0("data2/", rda.file))
 
   print(paste0("Data saved as data2/", rda.file))
+
+  readr::write_rds(res2, "data2/res.rds")
+
+
 
   print("HURRA")
 

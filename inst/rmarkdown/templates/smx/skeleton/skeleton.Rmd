@@ -5,25 +5,38 @@ runtime: shiny
 ---
 
 ```{r, eval = FALSE}
+# NOTE: I may sometimes make/need to make update of the xe- and the smxapp-package.
+# To install the first time/or at any time an update is made you should run this
+# code below (your need to temporary remove the "#" sign
+#devtools::install_github("fishvice/xe", dependencies = FALSE)
+#devtools::install_github("einarhjorleifsson/smxapp", dependencies = FALSE)
+
+
 # NOTE: In the line above it says eval = FALSE. This means that when you 
 #       "Run Document" this code chunk will not be executed
 #       
 #       You only want to run the code if you have added more tows to Hafvog,
 #       or if new versions of xe- and smxapp-packages have been made (will
-#       inform the smb2018 cruise leader when that occurs via e-mail).
+#       inform the contemoraneous smx cruise leaders if/when that occurs via
+#       e-mail).
+
 library(tidyverse)
 library(lubridate)
 library(sp)
 library(ROracle)
 library(xe)
-con <- connect_xe()
 
-# Specify the synaflokkur using the id and the gear using the gid. Below
-#  applies to SMH.
-res <- import_smx(con, id = 35, gid = c(77, 78))
+# Specify the synaflokkur using the id and the gear using the gid. E.g.:
+#         id   gid
+# SMB     30    73
+# SMB     35    77, 78
+# The default below applies to SMB
+
+res <- import_smx(id = 30, gid = c(73))
+
+
 # Note, from the above code we could proceed with scutinizing the data. The object
-#   res is a list that contains res$st, res$nu, res$le, res$kv of all the past 
-#   spring survey tows and then the current one that reside in Hafvog
+#   res is a list of dataframes and then some lists (names can be viewed by names(res))
 #
 #   If you are only interested in using the smxapp the next step does some
 #   standardization of data, bootsrapping and other things
@@ -32,8 +45,8 @@ res <- import_smx(con, id = 35, gid = c(77, 78))
 #   when the "Run Document" is pressed
 library(smxapp)
 # The cruise argument below can be changed. E.g. if on only wants to look at the
-# data for Hjalteyrin then the argument would simply be cruise = c("TH1-2018")
-munge_for_smxapp(res, cruise = c("TL2-2018"))
+# data for Ljósafell 2019 then the argument would simply be cruise = c("TL1-2019")
+munge_for_smxapp(res, cruise = c("TL1-2019"))
 ```
 
 ```{r global, include=FALSE}
@@ -44,6 +57,17 @@ library(leaflet)
 library(htmltools)
 library(DT)
 load("data2/smb_dashboard.rda")
+pp <- 
+  read_rds("data2/pp.rds") %>% 
+  mutate(m.thyngd = round(thyngd/n, 2))
+pp2 <- 
+  pp %>% 
+  group_by(leidangur, stod, pred, nr, astand) %>% 
+    summarise(thyngd = sum(thyngd, na.rm = TRUE),
+              n = sum(n, na.rm = TRUE),
+              oslaegt = max(oslaegt, na.rm = TRUE)) %>% 
+    ungroup() %>% 
+    mutate(magafylli = round(thyngd / oslaegt * 100, 2))
 
 Tegund <- sort(unique(by.tegund.lengd.ar$tegund))
 # You may need next line if smb_dashboard.rda was generated in windose but
@@ -505,6 +529,42 @@ DT::renderDataTable({
     formatStyle('ok.sl.osl', backgroundColor = styleEqual(c(0, 1), c('pink', '#C1FAAD'))) %>% 
     formatStyle('ok.kirtlar.osl', backgroundColor = styleEqual(c(0, 1), c('pink', '#C1FAAD'))) %>% 
     formatStyle('ok.lifur.osl', backgroundColor = styleEqual(c(0, 1), c('pink', '#C1FAAD')))
+})
+```
+
+Magar
+=====================================
+
+Column {.tabset}
+-------------------------------------
+
+### Mælingar á bráð
+
+```{r}
+DT::renderDataTable({
+  pp %>% 
+    filter(leidangur %in% input$Leidangur) %>% 
+    DT::datatable(extensions = 'Scroller',
+                  rownames = FALSE,
+                  options = list(deferRender = TRUE,
+                                 scrollY = 700,
+                                 scroller = TRUE
+                  ))
+})
+```
+
+### Samantekt per fisk
+
+```{r}
+DT::renderDataTable({
+  pp2 %>% 
+    filter(leidangur %in% input$Leidangur) %>% 
+    DT::datatable(extensions = 'Scroller',
+                  rownames = FALSE,
+                  options = list(deferRender = TRUE,
+                                 scrollY = 700,
+                                 scroller = TRUE
+                  ))
 })
 ```
 
