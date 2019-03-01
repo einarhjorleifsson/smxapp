@@ -590,14 +590,14 @@ renderPlot({
     
   d %>% 
     ggplot(aes(reorder(index, id), value)) +
-    theme_bw() +
+    theme_bw(base_size = 24) +
     geom_violin(scale = "width", colour = "grey") +
     geom_point(data = d2, aes(colour = factor(ar), group = factor(ar))) +
     geom_line(data = d2,   aes(colour = factor(ar), group = factor(ar))) +
     geom_point(data = d3, aes(group = factor(ar)), lwd = 1) +
     geom_line(data = d3,   aes(group = factor(ar)), lwd = 1) +
     scale_colour_brewer(palette = "Set1") +
-    facet_wrap(~ variable, scale = "free_x") +
+    facet_grid(leidangur ~ variable, scale = "free_x") +
     coord_flip() +
     labs(y = NULL, x = NULL, colour = "Year")
 })
@@ -620,14 +620,14 @@ renderPlot({
     
   d %>% 
     ggplot(aes(reorder(index, id), value)) +
-    theme_bw() +
+    theme_bw(base_size = 24) +
     geom_violin(scale = "width", colour = "grey") +
     geom_point(data = d2, aes(colour = factor(ar), group = factor(ar))) +
     geom_line(data = d2,   aes(colour = factor(ar), group = factor(ar))) +
     geom_point(data = d3, aes(group = factor(ar)), lwd = 1) +
     geom_line(data = d3,   aes(group = factor(ar)), lwd = 1) +
     scale_colour_brewer(palette = "Set1") +
-    facet_wrap(~ variable, scale = "free_x") +
+    facet_grid(leidangur ~ variable, scale = "free_x") +
     coord_flip() +
     labs(y = NULL, x = NULL, colour = "Year")
 })
@@ -650,6 +650,7 @@ renderPlot({
     
   d %>% 
     ggplot(aes(ar, value)) +
+    theme_bw(base_size = 24) +
     geom_violin(aes(group = ar), scale = "width") +
     geom_jitter(aes(group = ar), alpha = 0.2, colour = "red", size = 0.5) + 
     geom_line(data = d.median,
@@ -677,6 +678,7 @@ renderPlot({
     
   d %>% 
     ggplot(aes(ar, value)) +
+    theme_bw(base_size = 24) +
     geom_violin(aes(group = ar), scale = "width") +
     geom_jitter(aes(group = ar), alpha = 0.2, colour = "red", size = 0.5) + 
     geom_line(data = d.median,
