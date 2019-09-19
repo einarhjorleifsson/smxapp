@@ -45,7 +45,7 @@ res <- import_smx(id = 30, gid = c(73))
 #   when the "Run Document" is pressed
 # The cruise argument below can be changed. E.g. if on only wants to look at the
 # data for Ljósafell 2019 then the argument would simply be cruise = c("TL1-2019")
-munge_for_smxapp(res, cruise = c("TL1-2019"))
+munge_for_smxapp(res, cruise = c("A4-2019", "TM1-2019", "TL1-2019"))
 ```
 
 ```{r global, include=FALSE}
