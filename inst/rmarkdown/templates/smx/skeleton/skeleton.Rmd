@@ -552,6 +552,51 @@ DT::renderDataTable({
 })
 ```
 
+### Þyngdardreifing á bráð - Topp 20 bráðir
+
+```{r}
+renderPlot({
+  # applly some filter
+  d <- 
+    pp %>% 
+    filter(leidangur %in% input$Leidangur) %>% 
+    filter(astand == 1,
+           # brað verdur ad vera skilgreind
+           !is.na(prey),
+           # verður að hafa mælingu thyngd
+           !is.na(thyngd),
+           # verður að hafa mælingu talid
+           !is.na(n))
+  
+  # not really mean based on individual prey measurements
+  pp.mean <- 
+    d %>% 
+    group_by(prey) %>% 
+    summarise(fjoldi = sum(n),
+              mean = sum(thyngd) / sum(n)) %>% 
+    ungroup() %>% 
+    arrange(-fjoldi)
+  
+  # top 20 (bráð) tegundir "mældar"
+  top20 <-
+    pp.mean %>% 
+    slice(1:20)
+  top20.brad <-
+    top20 %>% 
+    pull(prey)
+  
+  pp %>% 
+    filter(leidangur %in% input$Leidangur) %>% 
+    filter(prey %in% top20.brad) %>% 
+    ggplot() +
+    geom_histogram(aes(m.thyngd)) +
+    geom_vline(data = top20, aes(xintercept = mean), colour = "red") +
+    facet_wrap(~ prey, scale = "free") +
+    labs(x = "Meðalþyngd", y = "Fjöldi")
+})
+```
+
+
 ### Samantekt per fisk
 
 ```{r}
@@ -564,6 +609,19 @@ DT::renderDataTable({
                                  scrollY = 700,
                                  scroller = TRUE
                   ))
+})
+```
+
+### Dreifing á magafylli eftir tegundum
+
+```{r}
+renderPlot({
+  pp2 %>% 
+    filter(leidangur %in% input$Leidangur) %>% 
+    ggplot(aes(magafylli)) + 
+    geom_histogram() + 
+    facet_wrap(~ pred, scale = "free_y") +
+    labs(x = "Magafylli", y = "Fjöldi fiska")
 })
 ```
 
