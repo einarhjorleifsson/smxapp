@@ -50,6 +50,10 @@ munge_for_smxapp <- function(res, cruise, rda.file = "smb_dashboard.rda") {
     dplyr::select(leidangur, stod, pred:thyngd) %>%
     readr::write_rds("data2/pp.rds")
 
+  print("read stations")
+  stations_smh <-
+    read_csv(file=paste0(path.package("smxapp"),"/csv/stations_smh.csv"))
+
   res2 <- res
 
   print("Various calculations")
@@ -64,6 +68,12 @@ munge_for_smxapp <- function(res, cruise, rda.file = "smb_dashboard.rda") {
   std.towlength <- 4             # Standard tow length is 4 nautical miles
 
   st <- res$st
+  # if smh (synaflokkur 35) then drop year 2011
+  tmp <- st %>% pull(synaflokkur) %>% unique()
+  if(tmp == 35) {
+    print("Dropping year 1995 and 2011")
+    st <- st %>% filter(!ar %in% c(1995, 2011))
+  }
   nu <- res$nu
   le <- res$le
   kv <- res$kv
