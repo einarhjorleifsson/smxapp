@@ -44,15 +44,25 @@ munge_for_smxapp <- function(res, cruise, rda.file = "smb_dashboard.rda") {
                   kyn,
                   thyngd = heildarthyngd)
   hv_pred %>%
-    dplyr::left_join(hv_prey) %>%
+    dplyr::left_join(hv_prey, by = c("synis_id", "pred", "nr")) %>%
     dplyr::left_join(res$st %>%
-                       select(synis_id, leidangur, stod)) %>%
+                       select(synis_id, leidangur, stod),
+                     by = "synis_id") %>%
     dplyr::select(leidangur, stod, pred:thyngd) %>%
     readr::write_rds("data2/pp.rds")
 
-  print("read stations")
-  stations_smh <-
-    read_csv(file=paste0(path.package("smxapp"),"/csv/stations_smh.csv"))
+  print("read stations from external file")
+  tows.external <-
+    readr::read_csv(file=paste0(path.package("smxapp"),"/csv/stations_smh.csv")) %>%
+    tidyr::as_tibble() %>%
+    dplyr::rename(gid = vid) %>%
+    dplyr::mutate(lon1 = -gisland::geo_convert(lon1),
+                  lon2 = -gisland::geo_convert(lon2),
+                  lat1 =  gisland::geo_convert(lat1),
+                  lat2 =  gisland::geo_convert(lat2)) %>%
+    dplyr::mutate(lon2 = ifelse(square == 424 & townumber == 3, -24.7583, lon2))
+
+
 
   res2 <- res
 
@@ -67,12 +77,14 @@ munge_for_smxapp <- function(res, cruise, rda.file = "smb_dashboard.rda") {
   max.towlength <- 8             # Maximum "acceptable" towlength
   std.towlength <- 4             # Standard tow length is 4 nautical miles
 
-  st <- res$st
+  st <-
+    res$st %>%
+    dplyr::mutate(index = paste0(index, veidarfaeri))
   # if smh (synaflokkur 35) then drop year 2011
-  tmp <- st %>% pull(synaflokkur) %>% unique()
+  tmp <- st %>% dplyr::pull(synaflokkur) %>% unique()
   if(tmp == 35) {
     print("Dropping year 1995 and 2011")
-    st <- st %>% filter(!ar %in% c(1995, 2011))
+    st <- st %>% dplyr::filter(!ar %in% c(1995, 2011))
   }
   nu <- res$nu
   le <- res$le
@@ -113,17 +125,18 @@ munge_for_smxapp <- function(res, cruise, rda.file = "smb_dashboard.rda") {
 
   le <-
     le %>%
-    complete(synis_id, tegund) %>%
-    replace_na(list(lengd = 0, fjoldi = 0)) %>%
-    left_join(nu, by = c("synis_id", "tegund")) %>%
-    mutate(r = ifelse(fjoldi == 0, 1, fj_alls/fj_maelt),
+    tidyr::complete(synis_id, tegund) %>%
+    tidyr::replace_na(list(lengd = 0, fjoldi = 0)) %>%
+    dplyr::left_join(nu, by = c("synis_id", "tegund")) %>%
+    dplyr::mutate(r = ifelse(fjoldi == 0, 1, fj_alls/fj_maelt),
            n.rai = ifelse(fjoldi != 0, fjoldi * r, fj_alls)) %>%
-    left_join(st %>% select(synis_id, ar, reitur, tognumer, toglengd), by = "synis_id") %>%
-    mutate(toglengd = if_else(toglengd > max.towlength, max.towlength, toglengd),
-           toglengd = if_else(toglengd < min.towlength, min.towlength, toglengd),
+    dplyr::left_join(st %>%
+                       dplyr::select(synis_id, ar, reitur, tognumer, toglengd), by = "synis_id") %>%
+    dplyr::mutate(toglengd = dplyr::if_else(toglengd > max.towlength, max.towlength, toglengd),
+           toglengd = dplyr::if_else(toglengd < min.towlength, min.towlength, toglengd),
            n.std = n.rai * std.towlength/toglengd,
            b.std  = ifelse(is.na(n.std), 0, n.rai) * 0.00001 * lengd^3) %>%
-    select(synis_id, ar, reitur, tognumer, toglengd, tegund:n.rai, n.std, b.std)
+    dplyr::select(synis_id, ar, reitur, tognumer, toglengd, tegund:n.rai, n.std, b.std)
   print("Length compilation done")
 
 
@@ -275,9 +288,54 @@ munge_for_smxapp <- function(res, cruise, rda.file = "smb_dashboard.rda") {
     ungroup()
 
 
+  print("Spatial stuff - the new kid on the block (sf)")
+
+  stadlar.rallstodvar.sf <-
+    tows.external %>%
+    dplyr::select(square:townumber, gid,
+                  lon_start = lon1, lat_start = lat1,
+                  lon_end   = lon2, lat_end   = lat2) %>%
+    tidyr::pivot_longer(lon_start:lat_end,
+                        names_to = c(".value", "startend"),
+                        names_sep = "_") %>%
+    sf::st_as_sf(coords = c("lon", "lat"),
+                 crs = 4326) %>%
+    dplyr::group_by(square, townumber, gid) %>%
+    dplyr::summarise(do_union = FALSE) %>%
+    sf::st_cast("LINESTRING") %>%
+    dplyr::mutate(index = paste0(square,
+                          ifelse(townumber < 10,
+                                 paste0("0", townumber),
+                                 townumber),
+                          gid)) %>%
+    dplyr::ungroup()
 
 
-  print("Spatial stuff")
+  # SF DONE
+  st.done.sf <-
+    st %>%
+    dplyr::filter(index %in% index.done) %>%
+    dplyr::filter(!is.na(lon1), !is.na(lat1), !is.na(lon2), !is.na(lat2)) %>%
+    dplyr::mutate(year = lubridate::year(dags)) %>%
+    dplyr::select(index,
+                  gid = veidarfaeri,
+                  year,
+                  lon_start = lon1, lat_start = lat1,
+                  lon_end = lon2, lat_end = lat2) %>%
+    tidyr::pivot_longer(lon_start:lat_end,
+                 names_to = c(".value", "startend"),
+                 names_sep = "_") %>%
+    #dplyr::select(-startend) %>%
+    sf::st_as_sf(coords = c("lon", "lat"),
+             crs = 4326) %>%
+    dplyr::group_by(index, year, gid) %>%
+    summarise(do_union = FALSE) %>%
+    sf::st_cast("LINESTRING") %>%
+    dplyr::ungroup()
+
+  # END: SF DONE
+
+  print("Spatial stuff - the old faithful")
 
   library(sp)
   tows <-
@@ -332,6 +390,8 @@ munge_for_smxapp <- function(res, cruise, rda.file = "smb_dashboard.rda") {
   sp@data <- cbind(sp@data, tows)
   st.done.sp <- sp
 
+
+
   by.tegund.lengd.ar <-
     by.tegund.lengd.ar %>%
     dplyr::filter(lengd != 0)
@@ -347,7 +407,9 @@ munge_for_smxapp <- function(res, cruise, rda.file = "smb_dashboard.rda") {
   save(now.year,
        index.done,
        stadlar.rallstodvar.sp,
+       stadlar.rallstodvar.sf,
        st.done.sp,
+       st.done.sf,
        st,
        stadlar.tegundir,
        stadlar.lw,

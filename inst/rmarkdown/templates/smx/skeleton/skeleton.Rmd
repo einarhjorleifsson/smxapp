@@ -55,9 +55,12 @@ library(ggrepel)
 library(leaflet)
 library(htmltools)
 library(DT)
+library(sf)
 load("data2/smb_dashboard.rda")
+#load("~/ShinyApps/smbfyrirkongenekkiprest/data2/smb_dashboard.rda")
 pp <- 
   read_rds("data2/pp.rds") %>% 
+  #read_rds("~/ShinyApps/smbfyrirkongenekkiprest/data2/pp.rds") %>% 
   mutate(m.thyngd = round(thyngd/n, 2))
 pp2 <- 
   pp %>% 
@@ -86,7 +89,7 @@ names(my.cruises) <- x$leidangur
 # For debugging input <- data_frame(Species = 1, Type = "Numbers")
 
 index.done.cruise <-
-  data_frame(index = index.done) %>% 
+  tibble(index = index.done) %>% 
   left_join(st %>% filter(ar == now.year) %>% select(leidangur, stod, index, togbyrjun))
 last.20 <-
   st %>%  
@@ -749,6 +752,9 @@ renderPlot({
 Surf and turf
 =====================================
 
+Column {.tabset}
+-------------------------------------
+
 ### Togfar
 
 ```{r}
@@ -771,6 +777,46 @@ renderLeaflet({
       p <-
       p %>% 
       addPolylines(data = st.done.sp[st.done.sp$ar == years[i],],
+                   group = years[i])
+    }
+  }
+  p %>% 
+    addLayersControl(overlayGroups = years,
+                   options = layersControlOptions(collapsed = FALSE))
+})
+
+```
+
+
+### Togfar - take 5
+
+```{r}
+renderLeaflet({
+  p <-
+    leaflet(stadlar.rallstodvar.sf %>% 
+              mutate(col = case_when(gid == 77 ~ "cyan",
+                                     TRUE ~ "pink"))) %>% 
+    addTiles() %>% 
+    addPolylines(color = ~col, weight = 10)
+  years <- as.character(now.year:(now.year - 3))
+  for(i in 1:length(years)) {
+    
+    if(i == 1) {
+      p <-
+      p %>% 
+      addPolylines(data = st.done.sf[st.done.sf$year == years[i],] %>% 
+                     dplyr::mutate(col = case_when(gid == 77 ~ "blue",
+                                     TRUE ~ "red")),
+                   color = ~col,
+                   group = years[i],
+                   label = ~htmlEscape(as.character(index)))
+    } else {
+      p <-
+      p %>% 
+      addPolylines(data = st.done.sf[st.done.sf$year == years[i],] %>% 
+                     dplyr::mutate(col = case_when(gid == 77 ~ "blue",
+                                     TRUE ~ "red")),
+                   color = ~col,
                    group = years[i])
     }
   }
