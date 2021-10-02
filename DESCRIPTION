@@ -1,23 +1,27 @@
 Package: smxapp
 Type: Package
 Title: A template drial
-Version: 0.0.7.9001
-Date: 2018-10-09
+Version: 0.1.0.9001
+Date: 2021-10-01
 Authors@R:
   c(person("Einar", "Hjorleifsson", email = "einarhjorleifsson@gmail.com",role = c("aut", "cre")))
 Maintainer: Einar Hjorleifsson <einar.hjorleifsson@gmail.com>
 Description: Utilities for MFRI xe-database
 Depends:
     R (>= 3.1.1)
-Imports: utils, rmarkdown, knitr, yaml
+Imports: 
+  utils, 
+  rmarkdown,
+  knitr, 
+  yaml
 License: GPL (>= 2)
 LazyData: TRUE
-URL: http://github.com/fishvice/xe
-BugReports: http://github.com/xe/mar/issues
+URL: http://github.com/einarhjorleifsson/smxapp
+BugReports: http://github.com/einarhjorleifsson/smxapp/issues
 Encoding: UTF-8
 Suggests:
     bookdown,
     knitr,
     rmarkdown
 VignetteBuilder: knitr
-RoxygenNote: 6.1.1
+RoxygenNote: 7.1.1
