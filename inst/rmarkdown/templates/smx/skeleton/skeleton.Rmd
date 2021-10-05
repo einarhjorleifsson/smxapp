@@ -48,25 +48,27 @@ munge_for_smxapp(res, cruise = c("B4-2021"))
 ```
 
 ```{r global, include=FALSE}
-library(sp)
-library(tidyverse)
-library(ggrepel)
-library(leaflet)
-library(htmltools)
-library(DT)
-library(sf)
+library(magrittr)
+#library(sp)
+#library(dplyr)
+#library(ggplot2)
+#library(ggrepel)
+#library(leaflet)
+#library(htmltools)
+#library(DT)
+#library(sf)
 load("data2/smb_dashboard.rda")
 pp <- 
-  read_rds("data2/pp.rds") %>% 
-  mutate(m.thyngd = round(thyngd/n, 2))
+  readr::read_rds("data2/pp.rds") %>% 
+  dplyr::mutate(m.thyngd = round(thyngd/n, 2))
 pp2 <- 
   pp %>% 
-  group_by(leidangur, stod, pred, nr, astand) %>% 
-    summarise(thyngd = sum(thyngd, na.rm = TRUE),
-              n = sum(n, na.rm = TRUE),
-              oslaegt = max(oslaegt, na.rm = TRUE)) %>% 
-    ungroup() %>% 
-    mutate(magafylli = round(thyngd / oslaegt * 100, 2))
+  dplyr::group_by(leidangur, stod, pred, nr, astand) %>% 
+  dplyr::summarise(thyngd = sum(thyngd, na.rm = TRUE),
+            n = sum(n, na.rm = TRUE),
+            oslaegt = max(oslaegt, na.rm = TRUE),
+            .groups = "drop") %>% 
+  dplyr::mutate(magafylli = round(thyngd / oslaegt * 100, 2))
 
 Tegund <- sort(unique(by.tegund.lengd.ar$tegund))
 # You may need next line if smb_dashboard.rda was generated in windose but
@@ -75,40 +77,47 @@ Tegund <- sort(unique(by.tegund.lengd.ar$tegund))
 # fisktegundir$heiti <- iconv(fisktegundir$heiti, from = "ISO-8859-1", to = "UTF-8")
 x <- 
   fisktegundir %>% 
-  filter(tegund %in% Tegund) %>% 
-  mutate(val = paste(tegund, heiti)) %>% 
-  select(tegund, val)
+  dplyr::filter(tegund %in% Tegund) %>% 
+  dplyr::mutate(val = paste(tegund, heiti)) %>% 
+  dplyr::select(tegund, val)
 my.species <- as.list(x$tegund)
 names(my.species) <- x$val
-x <- st %>% filter(ar == now.year) %>% select(leidangur) %>% distinct()
+x <- st %>% 
+  dplyr::filter(ar == now.year) %>% 
+  dplyr::select(leidangur) %>% 
+  dplyr::distinct()
 my.cruises <- as.list(x$leidangur)
 names(my.cruises) <- x$leidangur
 
 index.done.cruise <-
-  tibble(index = index.done) %>% 
-  left_join(st %>% filter(ar == now.year) %>% select(leidangur, stod, index, togbyrjun))
+  tibble::tibble(index = index.done) %>% 
+  dplyr::left_join(st %>% 
+                     dplyr::filter(ar == now.year) %>% 
+                     dplyr::select(leidangur, stod, index, togbyrjun))
 last.20 <-
   st %>%  
-  filter(ar == now.year) %>% 
-  arrange(leidangur, desc(togbyrjun)) %>% 
-  group_by(leidangur) %>% 
-  slice(1:20) %>% 
-  mutate(id = n():1) %>% 
-  ungroup() %>% 
-  select(leidangur, id, index) %>% 
-  left_join(st %>% select(index, ar, larett_opnun, lodrett_opnun,
-                          botnhiti, yfirbordshiti, vir_uti)) %>%
-  gather(variable, value, larett_opnun:vir_uti) %>% 
-  filter(!is.na(value))
+  dplyr::filter(ar == now.year) %>% 
+  dplyr::arrange(leidangur, desc(togbyrjun)) %>% 
+  dplyr::group_by(leidangur) %>% 
+  dplyr::slice(1:20) %>% 
+  dplyr::mutate(id = dplyr::n():1) %>% 
+  dplyr::ungroup() %>% 
+  dplyr::select(leidangur, id, index) %>% 
+  dplyr::left_join(st %>% 
+                     dplyr::select(index, ar, larett_opnun, lodrett_opnun,
+                                   botnhiti, yfirbordshiti, vir_uti)) %>%
+  tidyr::gather(variable, value, larett_opnun:vir_uti) %>% 
+  dplyr::filter(!is.na(value))
 st.dummy <-
   st %>%  
-  filter(index %in% index.done,
-         ar == now.year) %>% 
-  select(leidangur, index) %>% 
-  left_join(st %>% select(index, ar, larett_opnun, lodrett_opnun,
-                          botnhiti, yfirbordshiti, vir_uti)) %>%
-  gather(variable, value, larett_opnun:vir_uti) %>% 
-  filter(!is.na(value))
+  dplyr::filter(index %in% index.done,
+                ar == now.year) %>% 
+  dplyr::select(leidangur, index) %>% 
+  dplyr::left_join(st %>% 
+                     dplyr::select(index, ar, larett_opnun, lodrett_opnun,
+                                 botnhiti, yfirbordshiti, vir_uti)) %>%
+  tidyr::gather(variable, value, larett_opnun:vir_uti) %>% 
+  dplyr::filter(!is.na(value))
 ```
 
 Sidebar {.sidebar data-width=175}
@@ -124,7 +133,7 @@ radioButtons(inputId = "Type", label = "Val:",
              selected = list("Numbers"))
 
 checkboxGroupInput(inputId = "Leidangur", label = "Leidangur:",
-            choices = my.cruises, selected = my.cruises[[1]])
+                   choices = my.cruises, selected = my.cruises[[1]])
 ```
 
 
@@ -149,31 +158,31 @@ Column
 renderPlot({
   if(input$Type == "Numbers") 
   {
-    ggplot() +
-      theme_grey(base_size = 16) +
-      geom_ribbon(data = by.tegund.lengd.ar.m %>% 
-                    filter(tegund == as.numeric(input$Species)),
-                  aes(lengd, ymax = n.std, ymin = 0), fill = "grey") +
-      geom_line(data = by.tegund.lengd.ar  %>% 
-                  filter(tegund == as.numeric(input$Species),
-                         ar >= 2010),
-                aes(lengd, n.std)) +
-      facet_grid(ar ~ .) +
-      labs(x = NULL, y = "Fjöldi í hverju lengdarbili") +
-      scale_x_continuous(breaks = seq(10, 200, by = 10))
+    ggplot2::ggplot() +
+      ggplot2::theme_grey(base_size = 16) +
+      ggplot2::geom_ribbon(data = by.tegund.lengd.ar.m %>% 
+                             dplyr::filter(tegund == as.numeric(input$Species)),
+                           ggplot2::aes(lengd, ymax = n.std, ymin = 0), fill = "grey") +
+      ggplot2::geom_line(data = by.tegund.lengd.ar  %>% 
+                           dplyr::filter(tegund == as.numeric(input$Species),
+                                         ar >= 2010),
+                         ggplot2::aes(lengd, n.std)) +
+      ggplot2::facet_grid(ar ~ .) +
+      ggplot2::labs(x = NULL, y = "Fjöldi í hverju lengdarbili") +
+      ggplot2::scale_x_continuous(breaks = seq(10, 200, by = 10))
   } else {
-    ggplot() +
-      theme_grey(base_size = 16) +
-      geom_ribbon(data = by.tegund.lengd.ar.m %>% 
-                    filter(tegund == as.numeric(input$Species)),
-                  aes(lengd, ymax = b.std, ymin = 0), fill = "grey") +
-      geom_line(data = by.tegund.lengd.ar  %>% 
-                  filter(tegund == as.numeric(input$Species),
-                         ar >= 2010),
-                aes(lengd, b.std)) +
-      facet_grid(ar ~ .) +
-      labs(x = NULL, y = "Þyngd [kg] í hverju lengdarbili") +
-      scale_x_continuous(breaks = seq(10, 200, by = 10))
+    ggplot2::ggplot() +
+      ggplot2::theme_grey(base_size = 16) +
+      ggplot2::geom_ribbon(data = by.tegund.lengd.ar.m %>% 
+                             dplyr::filter(tegund == as.numeric(input$Species)),
+                           ggplot2::aes(lengd, ymax = b.std, ymin = 0), fill = "grey") +
+      ggplot2::geom_line(data = by.tegund.lengd.ar  %>% 
+                           dplyr::filter(tegund == as.numeric(input$Species),
+                                  ar >= 2010),
+                         ggplot2::aes(lengd, b.std)) +
+      ggplot2::facet_grid(ar ~ .) +
+      ggplot2::labs(x = NULL, y = "Þyngd [kg] í hverju lengdarbili") +
+      ggplot2::scale_x_continuous(breaks = seq(10, 200, by = 10))
   } 
   
 })
@@ -192,36 +201,24 @@ renderPlot({
   if(input$Type == "Numbers") 
   {
     by.station.boot %>% 
-      filter(tegund == as.numeric(input$Species),
-             variable == "n") %>% 
-      ggplot(aes(ar, n.std)) +
-      theme_grey(base_size = 16) +
-      #geom_point(data = by.station.boot.all %>%
-      #             filter(tegund == as.numeric(input$Species),
-      #                    variable == "n",
-      #                    ar <= 2018),
-      #           aes(ar, mean),
-      #           colour = "grey") +
-      geom_pointrange(aes(ar, mean, ymin = lower.ci, ymax = upper.ci)) +
-      scale_x_continuous(breaks = seq(1985, 2015, by = 5)) +
-      expand_limits(y = 0) +
-      labs(x = NULL, y = NULL)
+      dplyr::filter(tegund == as.numeric(input$Species),
+                      variable == "n") %>% 
+      ggplot2::ggplot(ggplot2::aes(ar, n.std)) +
+      ggplot2::theme_grey(base_size = 16) +
+      ggplot2::geom_pointrange(ggplot2::aes(ar, mean, ymin = lower.ci, ymax = upper.ci)) +
+      ggplot2::scale_x_continuous(breaks = seq(1985, 2015, by = 5)) +
+      ggplot2::expand_limits(y = 0) +
+      ggplot2::labs(x = NULL, y = NULL)
   } else {
     by.station.boot %>% 
-      filter(tegund == as.numeric(input$Species),
-             variable == "b") %>% 
-      ggplot(aes(ar, b.std)) +
-      theme_grey(base_size = 16) +
-      #geom_point(data = by.station.boot.all %>%
-      #             filter(tegund == as.numeric(input$Species),
-      #                    variable == "b",
-      #                    ar <= 2018),
-      #           aes(ar, mean),
-      #           colour = "grey") +
-      geom_pointrange(aes(ar, mean, ymin = lower.ci, ymax = upper.ci)) +
-      scale_x_continuous(breaks = seq(1985, 2015, by = 5)) +
-      expand_limits(y = 0) +
-      labs(x = NULL, y = NULL)
+      dplyr::filter(tegund == as.numeric(input$Species),
+                    variable == "b") %>% 
+      ggplot2::ggplot(ggplot2::aes(ar, b.std)) +
+      ggplot2::theme_grey(base_size = 16) +
+      ggplot2::geom_pointrange(ggplot2::aes(ar, mean, ymin = lower.ci, ymax = upper.ci)) +
+      ggplot2::scale_x_continuous(breaks = seq(1985, 2015, by = 5)) +
+      ggplot2::expand_limits(y = 0) +
+      ggplot2::labs(x = NULL, y = NULL)
   }
 })
 
@@ -232,47 +229,45 @@ renderPlot({
 
 
 ```{r}
-renderLeaflet({
+leaflet::renderLeaflet({
   
-  x0 <- by.station %>% filter(ar == now.year) %>% select(lon, lat) %>% distinct()
+  x0 <- 
+    by.station %>% 
+    dplyr::filter(ar == now.year) %>% 
+    dplyr::select(lon, lat) %>% 
+    dplyr::distinct()
   if(input$Type == "Numbers") {
     x <- 
       by.station %>% 
-      filter(ar == now.year,
-             tegund == as.numeric(input$Species),
-             n.std > 0) %>% 
-      select(lon, lat, n.std) %>% 
-      arrange(-n.std)
+      dplyr::filter(ar == now.year,
+                    tegund == as.numeric(input$Species),
+                    n.std > 0) %>% 
+      dplyr::select(lon, lat, n.std) %>% 
+      dplyr::arrange(-n.std)
     skali <- sqrt(max(x$n.std))
-    leaflet(x) %>% 
-      addTiles() %>% 
-      #addTiles(urlTemplate = "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
-      #     group = "Hn?ttur",
-      #     attribution = 'Data source: <a href="https://www.hafogvatn.is">Marine Rearch Institute</a>') %>% 
-      addCircles(data = x0, weight = 0.5, color = "white") %>% 
-      addCircles(weight = 1,
-                 popup = ~paste(n.std, "stykki"),
-                 radius = ~sqrt(n.std)/skali * 5e4,
-                 color = "red")
+    leaflet::leaflet(x) %>% 
+      leaflet::addTiles() %>% 
+      leaflet::addCircles(data = x0, weight = 0.5, color = "white") %>% 
+      leaflet::addCircles(weight = 1,
+                          popup = ~paste(n.std, "stykki"),
+                          radius = ~sqrt(n.std)/skali * 5e4,
+                          color = "red")
   } else {
     x <- 
       by.station %>% 
-      filter(ar == now.year,
-             b.std > 0,
-             tegund == as.numeric(input$Species)) %>% 
-      select(lon, lat, b.std) %>% 
-      arrange(-b.std)
+      dplyr::filter(ar == now.year,
+                    b.std > 0,
+                    tegund == as.numeric(input$Species)) %>% 
+      dplyr::select(lon, lat, b.std) %>% 
+      dplyr::arrange(-b.std)
     skali <- sqrt(max(x$b.std))
-    leaflet(x) %>% 
-      addTiles() %>% 
-      #addTiles(urlTemplate = "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
-      #     group = "Hn?ttur",
-      #     attribution = 'Data source: <a href="https://www.hafogvatn.is">Marine Rearch Institute</a>') %>% 
-      addCircles(data = x0, weight = 0.5, color = "white") %>% 
-      addCircles(weight = 1,
-                 popup = ~paste(round(b.std), "kg"),
-                 radius = ~sqrt(b.std)/skali * 5e4,
-                 color = "red")
+    leaflet::leaflet(x) %>% 
+      leaflet::addTiles() %>%
+      leaflet::addCircles(data = x0, weight = 0.5, color = "white") %>% 
+      leaflet::addCircles(weight = 1,
+                          popup = ~paste(round(b.std), "kg"),
+                          radius = ~sqrt(b.std)/skali * 5e4,
+                          color = "red")
   }
 })
 
@@ -282,39 +277,39 @@ Dreifing
 =====================================
 
 ### Afli í staðaltogi
-    
+
 ```{r}
 renderPlot({
   if(input$Type == "Numbers") {
     by.station %>% 
-      filter(ar %in% c(1985, 1990, 1995, 2000, seq(2005, 2015, by = 2), now.year-1, now.year),
-             tegund == as.numeric(input$Species)) %>% 
-      ggplot() +
-      theme_grey(base_size = 16) +
-      geom_path(data = geo::island, aes(lon, lat)) +
-      geom_point(aes(lon, lat, size = n.std),
-                 alpha = 0.5, colour = "red") +
-      scale_size_area(max_size = 30) +
-      coord_quickmap(xlim = range(by.station$lon, na.rm = TRUE),
-                     ylim = range(by.station$lat, na.rm = TRUE)) +
-      theme(legend.position = c(0.5, 0.6)) +
-      labs(x = NULL, y = NULL, size = "Stykki") +
-      facet_wrap(~ ar, nrow = 3)
+      dplyr::filter(ar %in% c(1985, 1990, 1995, 2000, seq(2005, 2015, by = 2), now.year-1, now.year),
+                    tegund == as.numeric(input$Species)) %>% 
+      ggplot2::ggplot() +
+      ggplot2::theme_grey(base_size = 16) +
+      ggplot2::geom_path(data = geo::island, ggplot2::aes(lon, lat)) +
+      ggplot2::geom_point(ggplot2::aes(lon, lat, size = n.std),
+                          alpha = 0.5, colour = "red") +
+      ggplot2::scale_size_area(max_size = 30) +
+      ggplot2::coord_quickmap(xlim = range(by.station$lon, na.rm = TRUE),
+                              ylim = range(by.station$lat, na.rm = TRUE)) +
+      ggplot2::theme(legend.position = c(0.5, 0.6)) +
+      ggplot2::labs(x = NULL, y = NULL, size = "Stykki") +
+      ggplot2::facet_wrap(~ ar, nrow = 3)
   } else {
     by.station %>% 
-      filter(ar %in% c(1985, 1990, 1995, 2000, seq(2005, 2015, by = 2), now.year - 1, now.year),
-             tegund == as.numeric(input$Species)) %>% 
-      ggplot() +
-      theme_grey(base_size = 16) +
-      geom_path(data = geo::island, aes(lon, lat)) +
-      geom_point(aes(lon, lat, size = b.std),
-                 alpha = 0.5, colour = "red") +
-      scale_size_area(max_size = 30) +
-      coord_quickmap(xlim = range(by.station$lon, na.rm = TRUE),
-                     ylim = range(by.station$lat, na.rm = TRUE)) +
-      theme(legend.position = c(0.5, 0.6)) +
-      labs(x = NULL, y = NULL, size = "kg") +
-      facet_wrap(~ ar, nrow = 3)
+      dplyr::filter(ar %in% c(1985, 1990, 1995, 2000, seq(2005, 2015, by = 2), now.year - 1, now.year),
+                    tegund == as.numeric(input$Species)) %>% 
+      ggplot2::ggplot() +
+      ggplot2::theme_grey(base_size = 16) +
+      ggplot2::geom_path(data = geo::island, ggplot2::aes(lon, lat)) +
+      ggplot2::geom_point(ggplot2::aes(lon, lat, size = b.std),
+                          alpha = 0.5, colour = "red") +
+      ggplot2::scale_size_area(max_size = 30) +
+      ggplot2::coord_quickmap(xlim = range(by.station$lon, na.rm = TRUE),
+                              ylim = range(by.station$lat, na.rm = TRUE)) +
+      ggplot2::theme(legend.position = c(0.5, 0.6)) +
+      ggplot2::labs(x = NULL, y = NULL, size = "kg") +
+      ggplot2::facet_wrap(~ ar, nrow = 3)
   }
 })
 
@@ -327,32 +322,39 @@ Vikmörk-myndir
 
 Column {.tabset}
 -------------------------------------
-    
+
 ### Lengd-óslægt
-    
+
 ```{r}
 renderPlot({
   d <- 
     kv.this.year %>%
-    left_join(st %>% select(synis_id, leidangur)) %>% 
-    filter(tegund == as.numeric(input$Species),
-           leidangur %in% input$Leidangur)
-  ggplot() +
-    theme_grey(base_size = 16) +
-    geom_ribbon(data = stadlar.lw %>% filter(tegund == as.numeric(input$Species)),
-                aes(lengd, ymin = osl1, ymax = osl2),
-                fill = "pink") +
-    geom_point(data = d %>% filter(ok.l.osl), aes(lengd, oslaegt), size = 1, alpha = 0.5, colour = "blue") +
-    geom_point(data = d %>% filter(!ok.l.osl), aes(lengd, oslaegt), colour = "red") +
-    geom_text_repel(data = d %>% filter(!ok.l.osl), aes(lengd, oslaegt, label = lab)) +
-    scale_x_log10(breaks = c(seq(5, 50, by = 5), seq(60, 100, by = 10), 120, 140, 160, 200), lim = range(d$lengd, na.rm = TRUE)) +
-    scale_y_log10(breaks = c(seq(5, 50, by = 5),
-                             seq(60, 100, by = 10),
-                             seq(120, 200, by = 20),
-                             seq(300, 1000, by = 100),
-                             seq(1500, 10000, by = 500),
-                             seq(15000, 30000, by = 1000)),
-                  lim = range(d$oslaegt, na.rm = TRUE))
+    dplyr::left_join(st %>% 
+                       dplyr::select(synis_id, leidangur)) %>% 
+    dplyr::filter(tegund == as.numeric(input$Species),
+                  leidangur %in% input$Leidangur)
+  ggplot2::ggplot() +
+    ggplot2::theme_grey(base_size = 16) +
+    ggplot2::geom_ribbon(data = stadlar.lw %>% 
+                           dplyr::filter(tegund == as.numeric(input$Species)),
+                         ggplot2::aes(lengd, ymin = osl1, ymax = osl2),
+                         fill = "pink") +
+    ggplot2::geom_point(data = d %>% 
+                          dplyr::filter(ok.l.osl), 
+                        ggplot2::aes(lengd, oslaegt), 
+                        size = 1, alpha = 0.5, colour = "blue") +
+    ggplot2::geom_point(data = d %>% dplyr::filter(!ok.l.osl), 
+                        ggplot2::aes(lengd, oslaegt), colour = "red") +
+    ggrepel::geom_text_repel(data = d %>% dplyr::filter(!ok.l.osl), 
+                             ggplot2::aes(lengd, oslaegt, label = lab)) +
+    ggplot2::scale_x_log10(breaks = c(seq(5, 50, by = 5), seq(60, 100, by = 10), 120, 140, 160, 200), lim = range(d$lengd, na.rm = TRUE)) +
+    ggplot2::scale_y_log10(breaks = c(seq(5, 50, by = 5),
+                                      seq(60, 100, by = 10),
+                                      seq(120, 200, by = 20),
+                                      seq(300, 1000, by = 100),
+                                      seq(1500, 10000, by = 500),
+                                      seq(15000, 30000, by = 1000)),
+                           lim = range(d$oslaegt, na.rm = TRUE))
 })
 
 ```
@@ -363,19 +365,27 @@ renderPlot({
 renderPlot({
   d <- 
     kv.this.year %>% 
-    left_join(st %>% select(synis_id, leidangur)) %>% 
-    filter(tegund == as.numeric(input$Species),
-           leidangur %in% input$Leidangur)
-  ggplot() +
-    theme_grey(base_size = 16) +
-    geom_ribbon(data = stadlar.lw %>% filter(tegund == as.numeric(input$Species)),
-                aes(lengd, ymin = sl1, ymax = sl2),
-                fill = "pink") +
-    geom_point(data = d %>% filter(ok.l.sl), aes(lengd, slaegt), size = 1, alpha = 0.5, colour = "blue") +
-    geom_point(data = d %>% filter(!ok.l.sl), aes(lengd, slaegt), colour = "red") +
-    geom_text_repel(data = d %>% filter(!ok.l.sl), aes(lengd, slaegt, label = lab)) +
-    scale_x_log10(breaks = c(5, 10, 15, 30, 60, 100), lim = range(d$lengd, na.rm = TRUE)) +
-    scale_y_log10(breaks = c(5, 25, 250, 500, 1000, 5000, 10000), lim = range(d$slaegt, na.rm = TRUE))
+    dplyr::left_join(st %>% 
+                       dplyr::select(synis_id, leidangur)) %>% 
+    dplyr::filter(tegund == as.numeric(input$Species),
+                  leidangur %in% input$Leidangur)
+  ggplot2::ggplot() +
+    ggplot2::theme_grey(base_size = 16) +
+    ggplot2::geom_ribbon(data = stadlar.lw %>% 
+                           dplyr::filter(tegund == as.numeric(input$Species)),
+                         ggplot2::aes(lengd, ymin = sl1, ymax = sl2),
+                         fill = "pink") +
+    ggplot2::geom_point(data = d %>% 
+                          dplyr::filter(ok.l.sl), 
+                        ggplot2::aes(lengd, slaegt), 
+                        size = 1, alpha = 0.5, colour = "blue") +
+    ggplot2::geom_point(data = d %>% dplyr::filter(!ok.l.sl), 
+                        ggplot2::aes(lengd, slaegt), colour = "red") +
+    ggrepel::geom_text_repel(data = d %>% 
+                               dplyr::filter(!ok.l.sl), 
+                             ggplot2::aes(lengd, slaegt, label = lab)) +
+    ggplot2::scale_x_log10(breaks = c(5, 10, 15, 30, 60, 100), lim = range(d$lengd, na.rm = TRUE)) +
+    ggplot2::scale_y_log10(breaks = c(5, 25, 250, 500, 1000, 5000, 10000), lim = range(d$slaegt, na.rm = TRUE))
 })
 
 ```
@@ -386,21 +396,25 @@ renderPlot({
 renderPlot({
   stadlar <- 
     stadlar.tegundir %>% 
-    filter(tegund == as.numeric(input$Species))
+    dplyr::filter(tegund == as.numeric(input$Species))
   d <- 
     kv.this.year %>% 
-    left_join(st %>% select(synis_id, leidangur)) %>% 
-    filter(tegund == as.numeric(input$Species),
-           leidangur %in% input$Leidangur)
-  ggplot() +
-    theme_grey(base_size = 16) +
-    geom_hline(yintercept = 1, colour = "red", lwd = 2) +
-    geom_rect(data = stadlar,
-                aes(xmin = -Inf, xmax = Inf, ymin = oslaegt_slaegt_low, ymax = oslaegt_slaegt_high),
-                fill = "pink") +
-    geom_point(data = d %>% filter(ok.sl.osl), aes(lengd, slaegt/oslaegt), size = 1, alpha = 0.5, colour = "blue") +
-    geom_point(data = d %>% filter(!ok.sl.osl), aes(lengd, slaegt/oslaegt), colour = "red") +
-    geom_text_repel(data = d %>% filter(!ok.sl.osl), aes(lengd, slaegt/oslaegt, label = lab))
+    dplyr::left_join(st %>% 
+                       dplyr::select(synis_id, leidangur)) %>% 
+    dplyr::filter(tegund == as.numeric(input$Species),
+                  leidangur %in% input$Leidangur)
+  ggplot2::ggplot() +
+    ggplot2::theme_grey(base_size = 16) +
+    ggplot2::geom_hline(yintercept = 1, colour = "red", lwd = 2) +
+    ggplot2::geom_rect(data = stadlar,
+                       ggplot2::aes(xmin = -Inf, xmax = Inf, ymin = oslaegt_slaegt_low, ymax = oslaegt_slaegt_high),
+                       fill = "pink") +
+    ggplot2::geom_point(data = d %>% dplyr::filter(ok.sl.osl), 
+                        ggplot2::aes(lengd, slaegt/oslaegt), size = 1, alpha = 0.5, colour = "blue") +
+    ggplot2::geom_point(data = d %>% dplyr::filter(!ok.sl.osl), 
+                        ggplot2::aes(lengd, slaegt/oslaegt), colour = "red") +
+    ggrepel::geom_text_repel(data = d %>% dplyr::filter(!ok.sl.osl), 
+                             ggplot2::aes(lengd, slaegt/oslaegt, label = lab))
 })
 
 ```
@@ -411,18 +425,26 @@ renderPlot({
 renderPlot({
   d <- 
     kv.this.year %>% 
-    left_join(st %>% select(synis_id, leidangur)) %>% 
-    filter(tegund == as.numeric(input$Species),
-           leidangur %in% input$Leidangur)
-  ggplot() +
-    theme_grey(base_size = 16) +
+    dplyr::left_join(st %>% 
+                       dplyr::select(synis_id, leidangur)) %>% 
+    dplyr::filter(tegund == as.numeric(input$Species),
+                  leidangur %in% input$Leidangur)
+  ggplot2::ggplot() +
+    ggplot2::theme_grey(base_size = 16) +
     #geom_hline(yintercept = 1, colour = "red", lwd = 2) +
-    geom_rect(data = stadlar.tegundir %>% filter(tegund == as.numeric(input$Species)),
-                aes(xmin = -Inf, xmax = Inf, ymin = lifur_low, ymax = lifur_high),
-                fill = "pink") +
-    geom_point(data = d %>% filter(ok.lifur.osl), aes(lengd, lifur/oslaegt), size = 1, alpha = 0.5, colour = "blue") +
-    geom_point(data = d %>% filter(!ok.lifur.osl), aes(lengd, lifur/oslaegt), colour = "red") +
-    geom_text_repel(data = d %>% filter(!ok.lifur.osl), aes(lengd, lifur/oslaegt, label = lab))
+    ggplot2::geom_rect(data = stadlar.tegundir %>% 
+                         dplyr::filter(tegund == as.numeric(input$Species)),
+              ggplot2::aes(xmin = -Inf, xmax = Inf, ymin = lifur_low, ymax = lifur_high),
+              fill = "pink") +
+    ggplot2::geom_point(data = d %>% 
+                          dplyr::filter(ok.lifur.osl), 
+                        ggplot2::aes(lengd, lifur/oslaegt), size = 1, alpha = 0.5, colour = "blue") +
+    ggplot2::geom_point(data = d %>% 
+                          dplyr::filter(!ok.lifur.osl), 
+                        ggplot2::aes(lengd, lifur/oslaegt), colour = "red") +
+    ggrepel::geom_text_repel(data = d %>% 
+                               dplyr::filter(!ok.lifur.osl), 
+                             ggplot2::aes(lengd, lifur/oslaegt, label = lab))
 })
 
 ```
@@ -433,18 +455,27 @@ renderPlot({
 renderPlot({
   d <- 
     kv.this.year %>% 
-    left_join(st %>% select(synis_id, leidangur)) %>% 
-    filter(tegund == as.numeric(input$Species),
+    dplyr::left_join(st %>% 
+                       dplyr::select(synis_id, leidangur)) %>% 
+    dplyr::filter(tegund == as.numeric(input$Species),
            leidangur %in% input$Leidangur)
-  ggplot() +
-    theme_grey(base_size = 16) +
+  ggplot2::ggplot() +
+    ggplot2::theme_grey(base_size = 16) +
     #geom_hline(yintercept = 1, colour = "red", lwd = 2) +
-    geom_rect(data = stadlar.tegundir %>% filter(tegund == as.numeric(input$Species)),
-                aes(xmin = -Inf, xmax = Inf, ymin = kynkirtlar_low, ymax = kynkirtlar_high),
-                fill = "pink") +
-    geom_point(data = d %>% filter(ok.kirtlar.osl), aes(lengd, kynfaeri/oslaegt), size = 1, alpha = 0.5, colour = "blue") +
-    geom_point(data = d %>% filter(!ok.kirtlar.osl), aes(lengd, kynfaeri/oslaegt), colour = "red") +
-    geom_text_repel(data = d %>% filter(!ok.kirtlar.osl), aes(lengd, kynfaeri/oslaegt, label = lab))
+    ggplot2::geom_rect(data = stadlar.tegundir %>% 
+                         dplyr::filter(tegund == as.numeric(input$Species)),
+              ggplot2::aes(xmin = -Inf, xmax = Inf, ymin = kynkirtlar_low, ymax = kynkirtlar_high),
+              fill = "pink") +
+    ggplot2::geom_point(data = d %>% 
+                          dplyr::filter(ok.kirtlar.osl), 
+                        ggplot2::aes(lengd, kynfaeri/oslaegt), 
+                        size = 1, alpha = 0.5, colour = "blue") +
+    ggplot2::geom_point(data = d %>% 
+                 dplyr::filter(!ok.kirtlar.osl), 
+               ggplot2::aes(lengd, kynfaeri/oslaegt),
+               colour = "red") +
+    ggrepel::geom_text_repel(data = d %>% dplyr::filter(!ok.kirtlar.osl),
+                             ggplot2::aes(lengd, kynfaeri/oslaegt, label = lab))
 })
 
 ```
@@ -460,17 +491,17 @@ Column {.tabset}
 ```{r}
 DT::renderDataTable({
   le.this.year %>% 
-    filter(!ok.l,
+    dplyr::filter(!ok.l,
            leidangur %in% input$Leidangur) %>%
-    select(-c(synis_id, index)) %>% 
-    arrange(leidangur, stod, tegund) %>% 
+    dplyr::select(-c(synis_id, index)) %>% 
+    dplyr::arrange(leidangur, stod, tegund) %>% 
     DT::datatable(extensions = 'Scroller',
                   rownames = FALSE,
                   options = list(deferRender = TRUE,
                                  scrollY = 700,
                                  scroller = TRUE
                   )) %>% 
-    formatStyle('ok.l', backgroundColor = styleEqual(c(0, 1), c('pink', '#C1FAAD')))
+    DT::formatStyle('ok.l', backgroundColor = DT::styleEqual(c(0, 1), c('pink', '#C1FAAD')))
 })
 
 ```
@@ -482,12 +513,14 @@ DT::renderDataTable({
 DT::renderDataTable({
   d <- 
     kv.this.year %>% 
-    left_join(st %>% select(synis_id, leidangur)) %>% 
-    filter(tegund == as.numeric(input$Species),
+    dplyr::left_join(st %>% 
+                       dplyr::select(synis_id, leidangur)) %>% 
+    dplyr::filter(tegund == as.numeric(input$Species),
            (!ok.l.osl | !ok.l.sl | !ok.sl.osl | !ok.kirtlar.osl | !ok.lifur.osl),
            leidangur %in% input$Leidangur) %>%
-    left_join(st %>% select(synis_id, leidangur, stod)) %>% 
-    select(leidangur, stod, index, nr, lengd, oslaegt, slaegt, kynfaeri, lifur, ok.l.osl:ok.lifur.osl)
+    dplyr::left_join(st %>% 
+                       dplyr::select(synis_id, leidangur, stod)) %>% 
+    dplyr::select(leidangur, stod, index, nr, lengd, oslaegt, slaegt, kynfaeri, lifur, ok.l.osl:ok.lifur.osl)
   d %>% 
     DT::datatable(extensions = 'Scroller',
                   rownames = FALSE,
@@ -495,11 +528,11 @@ DT::renderDataTable({
                                  scrollY = 700,
                                  scroller = TRUE
                   )) %>% 
-    formatStyle('ok.l.osl', backgroundColor = styleEqual(c(0, 1), c('pink', '#C1FAAD'))) %>% 
-    formatStyle('ok.l.sl', backgroundColor = styleEqual(c(0, 1), c('pink', '#C1FAAD'))) %>% 
-    formatStyle('ok.sl.osl', backgroundColor = styleEqual(c(0, 1), c('pink', '#C1FAAD'))) %>% 
-    formatStyle('ok.kirtlar.osl', backgroundColor = styleEqual(c(0, 1), c('pink', '#C1FAAD'))) %>% 
-    formatStyle('ok.lifur.osl', backgroundColor = styleEqual(c(0, 1), c('pink', '#C1FAAD')))
+    DT::formatStyle('ok.l.osl', backgroundColor = DT::styleEqual(c(0, 1), c('pink', '#C1FAAD'))) %>% 
+    DT::formatStyle('ok.l.sl', backgroundColor = DT::styleEqual(c(0, 1), c('pink', '#C1FAAD'))) %>% 
+    DT::formatStyle('ok.sl.osl', backgroundColor = DT::styleEqual(c(0, 1), c('pink', '#C1FAAD'))) %>% 
+    DT::formatStyle('ok.kirtlar.osl', backgroundColor = DT::styleEqual(c(0, 1), c('pink', '#C1FAAD'))) %>% 
+    DT::formatStyle('ok.lifur.osl', backgroundColor = DT::styleEqual(c(0, 1), c('pink', '#C1FAAD')))
 })
 
 ```
@@ -510,11 +543,11 @@ DT::renderDataTable({
 DT::renderDataTable({
   d <- 
     kv.this.year %>% 
-    left_join(st %>% select(synis_id, leidangur)) %>% 
-    filter((!ok.l.osl | !ok.l.sl | !ok.sl.osl | !ok.kirtlar.osl | !ok.lifur.osl),
+    dplyr::left_join(st %>% dplyr::select(synis_id, leidangur)) %>% 
+    dplyr::filter((!ok.l.osl | !ok.l.sl | !ok.sl.osl | !ok.kirtlar.osl | !ok.lifur.osl),
            leidangur %in% input$Leidangur) %>%
-    left_join(st %>% select(synis_id, leidangur, stod)) %>% 
-    select(leidangur, stod, index, tegund, nr, lengd, oslaegt, slaegt, kynfaeri, lifur, magi, ok.l.osl:ok.lifur.osl)
+    dplyr::left_join(st %>% dplyr::select(synis_id, leidangur, stod)) %>% 
+    dplyr::select(leidangur, stod, index, tegund, nr, lengd, oslaegt, slaegt, kynfaeri, lifur, magi, ok.l.osl:ok.lifur.osl)
   d %>% 
     DT::datatable(extensions = 'Scroller',
                   rownames = FALSE,
@@ -522,11 +555,11 @@ DT::renderDataTable({
                                  scrollY = 700,
                                  scroller = TRUE
                   )) %>% 
-    formatStyle('ok.l.osl', backgroundColor = styleEqual(c(0, 1), c('pink', '#C1FAAD'))) %>% 
-    formatStyle('ok.l.sl', backgroundColor = styleEqual(c(0, 1), c('pink', '#C1FAAD'))) %>% 
-    formatStyle('ok.sl.osl', backgroundColor = styleEqual(c(0, 1), c('pink', '#C1FAAD'))) %>% 
-    formatStyle('ok.kirtlar.osl', backgroundColor = styleEqual(c(0, 1), c('pink', '#C1FAAD'))) %>% 
-    formatStyle('ok.lifur.osl', backgroundColor = styleEqual(c(0, 1), c('pink', '#C1FAAD')))
+    DT::formatStyle('ok.l.osl', backgroundColor = DT::styleEqual(c(0, 1), c('pink', '#C1FAAD'))) %>% 
+    DT::formatStyle('ok.l.sl', backgroundColor = DT::styleEqual(c(0, 1), c('pink', '#C1FAAD'))) %>% 
+    DT::formatStyle('ok.sl.osl', backgroundColor = DT::styleEqual(c(0, 1), c('pink', '#C1FAAD'))) %>% 
+    DT::formatStyle('ok.kirtlar.osl', backgroundColor = DT::styleEqual(c(0, 1), c('pink', '#C1FAAD'))) %>% 
+    DT::formatStyle('ok.lifur.osl', backgroundColor = DT::styleEqual(c(0, 1), c('pink', '#C1FAAD')))
 })
 ```
 
@@ -541,7 +574,7 @@ Column {.tabset}
 ```{r}
 DT::renderDataTable({
   pp %>% 
-    filter(leidangur %in% input$Leidangur) %>% 
+    dplyr::filter(leidangur %in% input$Leidangur) %>% 
     DT::datatable(extensions = 'Scroller',
                   rownames = FALSE,
                   options = list(deferRender = TRUE,
@@ -558,8 +591,8 @@ renderPlot({
   # applly some filter
   d <- 
     pp %>% 
-    filter(leidangur %in% input$Leidangur) %>% 
-    filter(astand == 1,
+    dplyr::filter(leidangur %in% input$Leidangur) %>% 
+    dplyr::filter(astand == 1,
            # brað verdur ad vera skilgreind
            !is.na(prey),
            # verður að hafa mælingu thyngd
@@ -570,28 +603,29 @@ renderPlot({
   # not really mean based on individual prey measurements
   pp.mean <- 
     d %>% 
-    group_by(prey) %>% 
-    summarise(fjoldi = sum(n),
+    dplyr::group_by(prey) %>% 
+    dplyr::summarise(fjoldi = sum(n),
               mean = sum(thyngd) / sum(n)) %>% 
-    ungroup() %>% 
-    arrange(-fjoldi)
+    dplyr::ungroup() %>% 
+    dplyr::arrange(-fjoldi)
   
   # top 20 (bráð) tegundir "mældar"
   top20 <-
     pp.mean %>% 
-    slice(1:20)
+    dplyr::slice(1:20)
   top20.brad <-
     top20 %>% 
-    pull(prey)
+    dplyr::pull(prey)
   
   pp %>% 
-    filter(leidangur %in% input$Leidangur) %>% 
-    filter(prey %in% top20.brad) %>% 
-    ggplot() +
-    geom_histogram(aes(m.thyngd)) +
-    geom_vline(data = top20, aes(xintercept = mean), colour = "red") +
-    facet_wrap(~ prey, scale = "free") +
-    labs(x = "Meðalþyngd", y = "Fjöldi")
+    dplyr::filter(leidangur %in% input$Leidangur) %>% 
+    dplyr::filter(prey %in% top20.brad) %>% 
+    ggplot2::ggplot() +
+    ggplot2::geom_histogram(ggplot2::aes(m.thyngd)) +
+    ggplot2::geom_vline(data = top20, 
+                        ggplot2::aes(xintercept = mean), colour = "red") +
+    ggplot2::facet_wrap(~ prey, scale = "free") +
+    ggplot2::labs(x = "Meðalþyngd", y = "Fjöldi")
 })
 ```
 
@@ -601,7 +635,7 @@ renderPlot({
 ```{r}
 DT::renderDataTable({
   pp2 %>% 
-    filter(leidangur %in% input$Leidangur) %>% 
+    dplyr::filter(leidangur %in% input$Leidangur) %>% 
     DT::datatable(extensions = 'Scroller',
                   rownames = FALSE,
                   options = list(deferRender = TRUE,
@@ -616,11 +650,11 @@ DT::renderDataTable({
 ```{r}
 renderPlot({
   pp2 %>% 
-    filter(leidangur %in% input$Leidangur) %>% 
-    ggplot(aes(magafylli)) + 
-    geom_histogram() + 
-    facet_wrap(~ pred, scale = "free_y") +
-    labs(x = "Magafylli", y = "Fjöldi fiska")
+    dplyr::filter(leidangur %in% input$Leidangur) %>% 
+    ggplot2::ggplot(ggplot2::aes(magafylli)) + 
+    ggplot2::geom_histogram() + 
+    ggplot2::facet_wrap(~ pred, scale = "free_y") +
+    ggplot2::labs(x = "Magafylli", y = "Fjöldi fiska")
 })
 ```
 
@@ -636,27 +670,30 @@ Column {.tabset}
 renderPlot({
   d <-
     last.20 %>% 
-    filter(leidangur %in% input$Leidangur,
+    dplyr::filter(leidangur %in% input$Leidangur,
            variable %in% c("larett_opnun", "lodrett_opnun", "vir_uti"))
   d2 <- 
     d %>% 
-    filter(ar %in% 2013:(now.year - 1))
+    dplyr::filter(ar %in% 2013:(now.year - 1))
   d3 <-
     d %>% 
-    filter(ar %in% now.year)
-    
+    dplyr::filter(ar %in% now.year)
+  
   d %>% 
-    ggplot(aes(reorder(index, id), value)) +
-    theme_bw(base_size = 24) +
-    geom_violin(scale = "width", colour = "grey") +
-    geom_point(data = d2, aes(colour = factor(ar), group = factor(ar))) +
-    geom_line(data = d2,   aes(colour = factor(ar), group = factor(ar))) +
-    geom_point(data = d3, aes(group = factor(ar)), lwd = 1) +
-    geom_line(data = d3,   aes(group = factor(ar)), lwd = 1) +
-    scale_colour_brewer(palette = "Set1") +
-    facet_grid(leidangur ~ variable, scale = "free_x") +
-    coord_flip() +
-    labs(y = NULL, x = NULL, colour = "Year")
+    ggplot2::ggplot(ggplot2::aes(reorder(index, id), value)) +
+    ggplot2::theme_bw(base_size = 24) +
+    ggplot2::geom_violin(scale = "width", colour = "grey") +
+    ggplot2::geom_point(data = d2, 
+                        ggplot2::aes(colour = factor(ar), group = factor(ar))) +
+    ggplot2::geom_line(data = d2,   
+                       ggplot2::aes(colour = factor(ar), group = factor(ar))) +
+    ggplot2::geom_point(data = d3, ggplot2::aes(group = factor(ar)), lwd = 1) +
+    ggplot2::geom_line(data = d3,   
+              ggplot2::aes(group = factor(ar)), lwd = 1) +
+    ggplot2::scale_colour_brewer(palette = "Set1") +
+    ggplot2::facet_grid(leidangur ~ variable, scale = "free_x") +
+    ggplot2::coord_flip() +
+    ggplot2::labs(y = NULL, x = NULL, colour = "Year")
 })
 ```
 
@@ -666,27 +703,31 @@ renderPlot({
 renderPlot({
   d <-
     last.20 %>% 
-    filter(leidangur %in% input$Leidangur,
+    dplyr::filter(leidangur %in% input$Leidangur,
            variable %in% c("botnhiti", "yfirbordshiti"))
   d2 <- 
     d %>% 
-    filter(ar %in% 2013:(now.year - 1))
+    dplyr::filter(ar %in% 2013:(now.year - 1))
   d3 <-
     d %>% 
-    filter(ar %in% now.year)
-    
+    dplyr::filter(ar %in% now.year)
+  
   d %>% 
-    ggplot(aes(reorder(index, id), value)) +
-    theme_bw(base_size = 24) +
-    geom_violin(scale = "width", colour = "grey") +
-    geom_point(data = d2, aes(colour = factor(ar), group = factor(ar))) +
-    geom_line(data = d2,   aes(colour = factor(ar), group = factor(ar))) +
-    geom_point(data = d3, aes(group = factor(ar)), lwd = 1) +
-    geom_line(data = d3,   aes(group = factor(ar)), lwd = 1) +
-    scale_colour_brewer(palette = "Set1") +
-    facet_grid(leidangur ~ variable, scale = "free_x") +
-    coord_flip() +
-    labs(y = NULL, x = NULL, colour = "Year")
+    ggplot2::ggplot(ggplot2::aes(reorder(index, id), value)) +
+    ggplot2::theme_bw(base_size = 24) +
+    ggplot2::geom_violin(scale = "width", colour = "grey") +
+    ggplot2::geom_point(data = d2, 
+               ggplot2::aes(colour = factor(ar), group = factor(ar))) +
+    ggplot2::geom_line(data = d2,   
+                       ggplot2::aes(colour = factor(ar), group = factor(ar))) +
+    ggplot2::geom_point(data = d3, 
+                        ggplot2::aes(group = factor(ar)), lwd = 1) +
+    ggplot2::geom_line(data = d3,   
+                       ggplot2::aes(group = factor(ar)), lwd = 1) +
+    ggplot2::scale_colour_brewer(palette = "Set1") +
+    ggplot2::facet_grid(leidangur ~ variable, scale = "free_x") +
+    ggplot2::coord_flip() +
+    ggplot2::labs(y = NULL, x = NULL, colour = "Year")
 })
 ```
 
@@ -697,23 +738,23 @@ renderPlot({
   
   d <-
     st.dummy %>% 
-    filter(leidangur %in% input$Leidangur,
+    dplyr::filter(leidangur %in% input$Leidangur,
            variable %in% c("larett_opnun", "lodrett_opnun", "vir_uti")) 
   d.median <- 
     d %>% 
-    group_by(ar, variable) %>% 
-    summarise(value = median(value, na.rm = TRUE)) %>% 
-    ungroup()
-    
+    dplyr::group_by(ar, variable) %>% 
+    dplyr::summarise(value = median(value, na.rm = TRUE)) %>% 
+    dplyr::ungroup()
+  
   d %>% 
-    ggplot(aes(ar, value)) +
-    theme_bw(base_size = 24) +
-    geom_violin(aes(group = ar), scale = "width") +
-    geom_jitter(aes(group = ar), alpha = 0.2, colour = "red", size = 0.5) + 
-    geom_line(data = d.median,
+    ggplot2::ggplot(ggplot2::aes(ar, value)) +
+    ggplot2::theme_bw(base_size = 24) +
+    ggplot2::geom_violin(ggplot2::aes(group = ar), scale = "width") +
+    ggplot2::geom_jitter(ggplot2::aes(group = ar), alpha = 0.2, colour = "red", size = 0.5) + 
+    ggplot2::geom_line(data = d.median,
               colour = "blue") +
-    facet_wrap(~ variable, scale = "free_y") +
-    labs(x = NULL, y = NULL)
+    ggplot2::facet_wrap(~ variable, scale = "free_y") +
+    ggplot2::labs(x = NULL, y = NULL)
   
 })
 ```
@@ -723,25 +764,25 @@ renderPlot({
 ```{r}
 renderPlot({
   
-    d <-
+  d <-
     st.dummy %>% 
-    filter(leidangur %in% input$Leidangur,
+    dplyr::filter(leidangur %in% input$Leidangur,
            variable %in% c("botnhiti", "yfirbordshiti")) 
   d.median <- 
     d %>% 
-    group_by(ar, variable) %>% 
-    summarise(value = median(value, na.rm = TRUE)) %>% 
-    ungroup()
-    
+    dplyr::group_by(ar, variable) %>% 
+    dplyr::summarise(value = median(value, na.rm = TRUE)) %>% 
+    dplyr::ungroup()
+  
   d %>% 
-    ggplot(aes(ar, value)) +
-    theme_bw(base_size = 24) +
-    geom_violin(aes(group = ar), scale = "width") +
-    geom_jitter(aes(group = ar), alpha = 0.2, colour = "red", size = 0.5) + 
-    geom_line(data = d.median,
+    ggplot2::ggplot(ggplot2::aes(ar, value)) +
+    ggplot2::theme_bw(base_size = 24) +
+    ggplot2::geom_violin(ggplot2::aes(group = ar), scale = "width") +
+    ggplot2::geom_jitter(ggplot2::aes(group = ar), alpha = 0.2, colour = "red", size = 0.5) + 
+    ggplot2::geom_line(data = d.median,
               colour = "blue") +
-    facet_wrap(~ variable, scale = "free_y") +
-    labs(x = NULL, y = NULL)
+    ggplot2::facet_wrap(~ variable, scale = "free_y") +
+    ggplot2::labs(x = NULL, y = NULL)
 })
 ```
 
@@ -755,30 +796,30 @@ Column {.tabset}
 
 ```{r}
 
-renderLeaflet({
+leaflet::renderLeaflet({
   p <-
-    leaflet(stadlar.rallstodvar.sp) %>% 
-    addTiles() %>% 
-    addPolylines(color = "red", weight = 10)
+    leaflet::leaflet(stadlar.rallstodvar.sp) %>% 
+    leaflet::addTiles() %>% 
+    leaflet::addPolylines(color = "red", weight = 10)
   years <- as.character(now.year:(now.year - 3))
   for(i in 1:length(years)) {
     
     if(i == 1) {
       p <-
-      p %>% 
-      addPolylines(data = st.done.sp[st.done.sp$ar == years[i],],
-                   group = years[i],
-                   label = ~htmlEscape(as.character(synis_id)))
+        p %>% 
+        leaflet::addPolylines(data = st.done.sp[st.done.sp$ar == years[i],],
+                     group = years[i],
+                     label = ~htmltools::htmlEscape(as.character(synis_id)))
     } else {
       p <-
-      p %>% 
-      addPolylines(data = st.done.sp[st.done.sp$ar == years[i],],
-                   group = years[i])
+        p %>% 
+        leaflet::addPolylines(data = st.done.sp[st.done.sp$ar == years[i],],
+                     group = years[i])
     }
   }
   p %>% 
-    addLayersControl(overlayGroups = years,
-                   options = layersControlOptions(collapsed = FALSE))
+    leaflet::addLayersControl(overlayGroups = years,
+                     options = leaflet::layersControlOptions(collapsed = FALSE))
 })
 
 ```
@@ -787,38 +828,38 @@ renderLeaflet({
 ### Togfar - take 5
 
 ```{r}
-renderLeaflet({
+leaflet::renderLeaflet({
   p <-
-    leaflet(stadlar.rallstodvar.sf %>% 
-              mutate(col = case_when(gid == 77 ~ "cyan",
+    leaflet::leaflet(stadlar.rallstodvar.sf %>% 
+              dplyr::mutate(col = dplyr::case_when(gid == 77 ~ "cyan",
                                      TRUE ~ "pink"))) %>% 
-    addTiles() %>% 
-    addPolylines(color = ~col, weight = 10)
+    leaflet::addTiles() %>% 
+    leaflet::addPolylines(color = ~col, weight = 10)
   years <- as.character(now.year:(now.year - 3))
   for(i in 1:length(years)) {
     
     if(i == 1) {
       p <-
-      p %>% 
-      addPolylines(data = st.done.sf[st.done.sf$year == years[i],] %>% 
-                     dplyr::mutate(col = case_when(gid == 77 ~ "blue",
-                                     TRUE ~ "red")),
-                   color = ~col,
-                   group = years[i],
-                   label = ~htmlEscape(as.character(index)))
+        p %>% 
+        leaflet::addPolylines(data = st.done.sf[st.done.sf$year == years[i],] %>% 
+                       dplyr::mutate(col = dplyr::case_when(gid == 77 ~ "blue",
+                                                     TRUE ~ "red")),
+                     color = ~col,
+                     group = years[i],
+                     label = ~htmltools::htmlEscape(as.character(index)))
     } else {
       p <-
-      p %>% 
-      addPolylines(data = st.done.sf[st.done.sf$year == years[i],] %>% 
-                     dplyr::mutate(col = case_when(gid == 77 ~ "blue",
-                                     TRUE ~ "red")),
-                   color = ~col,
-                   group = years[i])
+        p %>% 
+        leaflet::addPolylines(data = st.done.sf[st.done.sf$year == years[i],] %>% 
+                       dplyr::mutate(col = dplyr::case_when(gid == 77 ~ "blue",
+                                                     TRUE ~ "red")),
+                     color = ~col,
+                     group = years[i])
     }
   }
   p %>% 
-    addLayersControl(overlayGroups = years,
-                   options = layersControlOptions(collapsed = FALSE))
+    leaflet::addLayersControl(overlayGroups = years,
+                     options = leaflet::layersControlOptions(collapsed = FALSE))
 })
 
 ```
@@ -832,22 +873,24 @@ Af aflabrögðum
 DT::renderDataTable({
   x <- 
     by.station %>% 
-    filter(ar == now.year) %>% 
-    left_join(st %>% filter(ar == now.year) %>% select(index, leidangur)) %>% 
-    group_by(leidangur, tegund) %>% 
-    summarise(n = round(sum(n.std), 0),
+    dplyr::filter(ar == now.year) %>% 
+    dplyr::left_join(st %>% 
+                       dplyr::filter(ar == now.year) %>% 
+                       dplyr::select(index, leidangur)) %>% 
+    dplyr::group_by(leidangur, tegund) %>% 
+    dplyr::summarise(n = round(sum(n.std), 0),
               b = round(sum(b.std), 0)) %>% 
-    gather(variable, value, n:b) %>% 
-    mutate(variable = paste0(variable, ".", leidangur)) %>% 
-    ungroup() %>% 
-    select(-leidangur) %>% 
-    spread(variable, value) %>%
-    left_join(fisktegundir) %>% 
-    mutate(tegund = paste(tegund, heiti)) %>% 
-    select(-heiti)
+    tidyr::gather(variable, value, n:b) %>% 
+    dplyr::mutate(variable = paste0(variable, ".", leidangur)) %>% 
+    dplyr::ungroup() %>% 
+    dplyr::select(-leidangur) %>% 
+    tidyr::spread(variable, value) %>%
+    dplyr::left_join(fisktegundir) %>% 
+    dplyr::mutate(tegund = paste(tegund, heiti)) %>% 
+    dplyr::select(-heiti)
   if(input$Type == "Numbers") {
     x %>% 
-      select(tegund, starts_with("n.")) %>% 
+      dplyr::select(tegund, starts_with("n.")) %>% 
       DT::datatable(extensions = 'Scroller',
                     rownames = FALSE,
                     options = list(deferRender = TRUE,
@@ -856,7 +899,7 @@ DT::renderDataTable({
                     ))
   } else {
     x %>% 
-      select(tegund, starts_with("b.")) %>% 
+      dplyr::select(tegund, starts_with("b.")) %>% 
       DT::datatable(extensions = 'Scroller',
                     rownames = FALSE,
                     options = list(deferRender = TRUE,
@@ -864,7 +907,7 @@ DT::renderDataTable({
                                    scroller = TRUE
                     ))
   }
- 
+  
 })
 
 ```
