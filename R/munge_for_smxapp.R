@@ -172,7 +172,7 @@ munge_for_smxapp <- function(res, cruise, rda.file = "smb_dashboard.rda") {
     dplyr::select(tegund, lengd) %>%
     tidyr::drop_na() %>%
     dplyr::group_by(tegund) %>%
-    dplyr::summarise(n = n(),
+    dplyr::summarise(n = dplyr::n(),
                      l.min = min(lengd),
                      l.max = max(lengd))
   res <- list()
