@@ -1,19 +1,29 @@
 Package: smxapp
 Type: Package
 Title: A template drial
-Version: 0.1.0.9001
-Date: 2021-10-01
+Version: 0.2.0.9001
+Date: 2021-10-05
 Authors@R:
   c(person("Einar", "Hjorleifsson", email = "einarhjorleifsson@gmail.com",role = c("aut", "cre")))
 Maintainer: Einar Hjorleifsson <einar.hjorleifsson@gmail.com>
 Description: Utilities for MFRI xe-database
 Depends:
     R (>= 3.1.1)
-Imports: 
-  utils, 
-  rmarkdown,
-  knitr, 
-  yaml
+Imports:
+  DBI,
+  dplyr,
+  geo,
+  gisland,
+  janitor,
+  lubridate,
+  magrittr,
+  readr,
+  sf,
+  sp,
+  stringr,
+  tibble,
+  tidyr,
+  utils
 License: GPL (>= 2)
 LazyData: TRUE
 URL: http://github.com/einarhjorleifsson/smxapp
@@ -24,4 +34,4 @@ Suggests:
     knitr,
     rmarkdown
 VignetteBuilder: knitr
-RoxygenNote: 7.1.1
+RoxygenNote: 7.1.2

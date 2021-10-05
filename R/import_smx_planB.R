@@ -6,7 +6,6 @@
 #' @param store A boolean, if TRUE then the returned returned object is also
 #' saved as hafvog.rds in directory data
 #'
-#' @export
 import_smx_planB <- function(id = 30, gid = 73, year, store = FALSE) {
 
   schema <- c("FISKAR", "HAFVOG")

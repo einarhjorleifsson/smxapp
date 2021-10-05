@@ -1,4 +1,3 @@
-#' @export
 lesa_stodvarB <- function(con, schema = "FISKAR", synaflokkur) {
   # stodvar
   q <-
