@@ -331,7 +331,7 @@ munge_for_smxapp <- function(res, cruise, rda.file = "smb_dashboard.rda") {
     sf::st_as_sf(coords = c("lon", "lat"),
              crs = 4326) %>%
     dplyr::group_by(index, year, gid) %>%
-    summarise(do_union = FALSE) %>%
+    dplyr::summarise(do_union = FALSE) %>%
     sf::st_cast("LINESTRING") %>%
     dplyr::ungroup()
 
