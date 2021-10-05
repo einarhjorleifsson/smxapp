@@ -32,7 +32,8 @@ munge_for_smxapp <- function(res, cruise, rda.file = "smb_dashboard.rda") {
                   pnr = nr,
                   nr = kvarnanr) %>%
     dplyr::left_join(res$other.stuff$fisktegundir %>%
-                       dplyr::select(prey = tegund, heiti)) %>%
+                       dplyr::select(prey = tegund, heiti),
+                     by = "prey") %>%
     dplyr::select(synis_id,
                   pred,
                   nr,
@@ -53,8 +54,9 @@ munge_for_smxapp <- function(res, cruise, rda.file = "smb_dashboard.rda") {
 
   print("read stations from external file")
   tows.external <-
-    readr::read_csv(file=paste0(path.package("smxapp"),"/csv/stations_smh.csv")) %>%
-    tidyr::as_tibble() %>%
+    readr::read_csv(file=paste0(path.package("smxapp"),"/csv/stations_smh.csv"),
+                    show_col_types = FALSE) %>%
+    tibble::as_tibble() %>%
     dplyr::rename(gid = vid) %>%
     dplyr::mutate(lon1 = -gisland::geo_convert(lon1),
                   lon2 = -gisland::geo_convert(lon2),
@@ -181,7 +183,7 @@ munge_for_smxapp <- function(res, cruise, rda.file = "smb_dashboard.rda") {
                             lengd = x$l.min[i]:x$l.max[i],
                             ar = unique(by.tegund.lengd.ar$ar))
   }
-  x <- dplyr::bind_rows(res) %>% as_tibble()
+  x <- dplyr::bind_rows(res) %>% tibble::as_tibble()
 
   by.tegund.lengd.ar <-
     x %>%
@@ -193,7 +195,7 @@ munge_for_smxapp <- function(res, cruise, rda.file = "smb_dashboard.rda") {
     by.tegund.lengd.ar %>%
     dplyr::filter(ar >= 2010) %>%
     dplyr::group_by(tegund, lengd) %>%
-    dplyr::summarise(n.year = n_distinct(ar),
+    dplyr::summarise(n.year = dplyr::n_distinct(ar),
               n.std = sum(n.std, na.rm = TRUE) / n.year,
               b.std = sum(b.std, na.rm = TRUE) / n.year,
               .groups = "drop")
