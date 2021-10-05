@@ -32,7 +32,7 @@ munge_for_smxapp <- function(res, cruise, rda.file = "smb_dashboard.rda") {
                   pnr = nr,
                   nr = kvarnanr) %>%
     dplyr::left_join(res$other.stuff$fisktegundir %>%
-                       select(prey = tegund, heiti)) %>%
+                       dplyr::select(prey = tegund, heiti)) %>%
     dplyr::select(synis_id,
                   pred,
                   nr,
@@ -46,7 +46,7 @@ munge_for_smxapp <- function(res, cruise, rda.file = "smb_dashboard.rda") {
   hv_pred %>%
     dplyr::left_join(hv_prey, by = c("synis_id", "pred", "nr")) %>%
     dplyr::left_join(res$st %>%
-                       select(synis_id, leidangur, stod),
+                       dplyr::select(synis_id, leidangur, stod),
                      by = "synis_id") %>%
     dplyr::select(leidangur, stod, pred:thyngd) %>%
     readr::write_rds("data2/pp.rds")
@@ -164,8 +164,8 @@ munge_for_smxapp <- function(res, cruise, rda.file = "smb_dashboard.rda") {
     dplyr::left_join(le, by = "synis_id") %>%
     dplyr::group_by(tegund, ar, lengd) %>%
     dplyr::summarise(n.std = sum(n.std, na.rm = TRUE),
-                     b.std = sum(b.std, na.rm = TRUE)) %>%
-    dplyr::ungroup()
+                     b.std = sum(b.std, na.rm = TRUE),
+                     .groups = "drop")
   x <-
     by.tegund.lengd.ar %>%
     # code added because of bug in TL2-2018
@@ -192,50 +192,50 @@ munge_for_smxapp <- function(res, cruise, rda.file = "smb_dashboard.rda") {
   by.tegund.lengd.ar.m <-
     by.tegund.lengd.ar %>%
     dplyr::filter(ar >= 2010) %>%
-    group_by(tegund, lengd) %>%
-    summarise(n.year = n_distinct(ar),
+    dplyr::group_by(tegund, lengd) %>%
+    dplyr::summarise(n.year = n_distinct(ar),
               n.std = sum(n.std, na.rm = TRUE) / n.year,
-              b.std = sum(b.std, na.rm = TRUE) / n.year) %>%
-    ungroup()
+              b.std = sum(b.std, na.rm = TRUE) / n.year,
+              .groups = "drop")
   print("Length summation 1 done")
 
   by.station <-
     st %>%
-    filter(index %in% index.done) %>%
-    select(synis_id, lon, lat, index) %>%
-    left_join(le, by = "synis_id") %>%
-    group_by(ar, index, lon, lat, tegund) %>%
-    summarise(n.std = sum(n.std, na.rm = TRUE),
-              b.std = sum(b.std, na.rm = TRUE)) %>%
-    ungroup()
+    dplyr::filter(index %in% index.done) %>%
+    dplyr::select(synis_id, lon, lat, index) %>%
+    dplyr::left_join(le, by = "synis_id") %>%
+    dplyr::group_by(ar, index, lon, lat, tegund) %>%
+    dplyr::summarise(n.std = sum(n.std, na.rm = TRUE),
+              b.std = sum(b.std, na.rm = TRUE),
+              .groups = "drop")
   print("Station summation done")
 
   kv.this.year <-
     st %>%
-    filter(ar == now.year,
+    dplyr::filter(ar == now.year,
            index %in% index.done) %>%
-    select(synis_id, index, leidstod) %>%
-    left_join(kv, by = "synis_id") %>%
-    mutate(lab = paste0(leidstod, "-", nr)) %>%
-    left_join(stadlar.lw, by = c("tegund", "lengd")) %>%
-    mutate(ok.l.osl = if_else(oslaegt >= osl1 & oslaegt <= osl2, TRUE, FALSE, TRUE),
-           ok.l.sl = if_else(slaegt >= sl1 & slaegt <= sl2, TRUE, FALSE, TRUE)) %>%
-    select(-c(osl1:sl2)) %>%
-    left_join(stadlar.tegundir %>%
-                select(tegund, kynkirtlar_high:oslaegt_vigtad_low), by = "tegund") %>%
-    mutate(ok.sl.osl = if_else(slaegt/oslaegt >= oslaegt_slaegt_low & slaegt/oslaegt <= oslaegt_slaegt_high, TRUE, FALSE, TRUE),
-           ok.kirtlar.osl = if_else(kynfaeri/oslaegt >= kynkirtlar_low & kynfaeri/oslaegt <= kynkirtlar_high, TRUE, FALSE, TRUE),
-           ok.lifur.osl = if_else(lifur/oslaegt >= lifur_low & lifur/oslaegt <= lifur_high, TRUE, FALSE, TRUE),
-           ok.magir.osl = if_else(magi/oslaegt  >= magi_low & magi/oslaegt <= magi_high, TRUE, FALSE, TRUE)) %>%
-    select(-c(kynkirtlar_high:oslaegt_vigtad_low))
+    dplyr::select(synis_id, index, leidstod) %>%
+    dplyr::left_join(kv, by = "synis_id") %>%
+    dplyr:: mutate(lab = paste0(leidstod, "-", nr)) %>%
+    dplyr::left_join(stadlar.lw, by = c("tegund", "lengd")) %>%
+    dplyr::mutate(ok.l.osl = dplyr::if_else(oslaegt >= osl1 & oslaegt <= osl2, TRUE, FALSE, TRUE),
+           ok.l.sl = dplyr::if_else(slaegt >= sl1 & slaegt <= sl2, TRUE, FALSE, TRUE)) %>%
+    dplyr::select(-c(osl1:sl2)) %>%
+    dplyr::left_join(stadlar.tegundir %>%
+                dplyr::select(tegund, kynkirtlar_high:oslaegt_vigtad_low), by = "tegund") %>%
+    dplyr::mutate(ok.sl.osl = dplyr::if_else(slaegt/oslaegt >= oslaegt_slaegt_low & slaegt/oslaegt <= oslaegt_slaegt_high, TRUE, FALSE, TRUE),
+           ok.kirtlar.osl = dplyr::if_else(kynfaeri/oslaegt >= kynkirtlar_low & kynfaeri/oslaegt <= kynkirtlar_high, TRUE, FALSE, TRUE),
+           ok.lifur.osl = dplyr::if_else(lifur/oslaegt >= lifur_low & lifur/oslaegt <= lifur_high, TRUE, FALSE, TRUE),
+           ok.magir.osl = dplyr::if_else(magi/oslaegt  >= magi_low & magi/oslaegt <= magi_high, TRUE, FALSE, TRUE)) %>%
+    dplyr::select(-c(kynkirtlar_high:oslaegt_vigtad_low))
   print("Otolith summation done")
 
   le.this.year <-
     le.this.year %>%
     dplyr::left_join(stadlar.tegundir %>%
-                       select(tegund, lengd_low, lengd_high),
+                       dplyr::select(tegund, lengd_low, lengd_high),
                      by = "tegund") %>%
-    dplyr::mutate(ok.l = if_else(lengd >= lengd_low & lengd <= lengd_high, TRUE, FALSE, TRUE)) %>%
+    dplyr::mutate(ok.l = dplyr::if_else(lengd >= lengd_low & lengd <= lengd_high, TRUE, FALSE, TRUE)) %>%
     dplyr::select(-c(lengd_low, lengd_high))
   print("Length summation 2 done")
 
@@ -257,7 +257,7 @@ munge_for_smxapp <- function(res, cruise, rda.file = "smb_dashboard.rda") {
   by.station.boot.n <-
     by.station %>%
     dplyr::group_by(tegund, ar) %>%
-    do(my_boot(.$n.std)) %>%
+    dplyr::do(my_boot(.$n.std)) %>%
     dplyr::mutate(variable = "n",
                   var = as.character(var))
 
@@ -266,7 +266,7 @@ munge_for_smxapp <- function(res, cruise, rda.file = "smb_dashboard.rda") {
   by.station.boot.b <-
     by.station %>%
     dplyr::group_by(tegund, ar) %>%
-    do(my_boot(.$b.std)) %>%
+    dplyr::do(my_boot(.$b.std)) %>%
     dplyr::mutate(variable = "b",
                   var = as.character(var))
 
@@ -280,12 +280,12 @@ munge_for_smxapp <- function(res, cruise, rda.file = "smb_dashboard.rda") {
   # Do for all stations -------------------------------------------------
   by.station.all <-
     st %>%
-    select(synis_id, lon, lat, index) %>%
-    left_join(le, by = "synis_id") %>%
-    group_by(ar, index, lon, lat, tegund) %>%
-    summarise(n.std = sum(n.std, na.rm = TRUE),
-              b.std = sum(b.std, na.rm = TRUE)) %>%
-    ungroup()
+    dplyr::select(synis_id, lon, lat, index) %>%
+    dplyr::left_join(le, by = "synis_id") %>%
+    dplyr::group_by(ar, index, lon, lat, tegund) %>%
+    dplyr::summarise(n.std = sum(n.std, na.rm = TRUE),
+              b.std = sum(b.std, na.rm = TRUE),
+              groups = "drop")
 
 
   print("Spatial stuff - the new kid on the block (sf)")
@@ -307,8 +307,8 @@ munge_for_smxapp <- function(res, cruise, rda.file = "smb_dashboard.rda") {
                           ifelse(townumber < 10,
                                  paste0("0", townumber),
                                  townumber),
-                          gid)) %>%
-    dplyr::ungroup()
+                          gid),
+                  .groups = "drop")
 
 
   # SF DONE
@@ -340,27 +340,27 @@ munge_for_smxapp <- function(res, cruise, rda.file = "smb_dashboard.rda") {
   library(sp)
   tows <-
     stadlar.rallstodvar %>%
-    drop_na(kastad_v, kastad_n, hift_v, hift_n)
+    tidyr::drop_na(kastad_v, kastad_n, hift_v, hift_n)
 
   tows$id2 <- 1:nrow(tows)
   x1 <-
     tows %>%
-    select(id2, kastad_v, hift_v) %>%
-    gather(variable, value, -id2)
+    dplyr::select(id2, kastad_v, hift_v) %>%
+    dplyr::gather(variable, value, -id2)
   x2 <-
     tows %>%
-    select(id2, kastad_n, hift_n) %>%
-    gather(variable, value, -id2)
+    dplyr::select(id2, kastad_n, hift_n) %>%
+    dplyr::gather(variable, value, -id2)
   x <- data.frame(id2 = x1$id2, lon = x1$value, lat = x2$value)
   lines_list <- list()
   for (i in 1:max(tows$id2)) {
-    x2 <- Line(x[x$id2 == i,c("lon","lat")])
-    lines_list[[i]] <- Lines(list(x2),ID=as.character(tows$id2[i]))
+    x2 <- sp::Line(x[x$id2 == i,c("lon","lat")])
+    lines_list[[i]] <- sp::Lines(list(x2),ID=as.character(tows$id2[i]))
   }
   sp <-
     lines_list %>%
-    SpatialLines(proj4string = CRS("+proj=longlat +datum=WGS84 +ellps=WGS84 +towgs84=0,0,0")) %>%
-    SpatialLinesDataFrame(data.frame(id = as.character(tows$id2)))
+    sp::SpatialLines(proj4string = sp::CRS("+proj=longlat +datum=WGS84 +ellps=WGS84 +towgs84=0,0,0")) %>%
+    sp::SpatialLinesDataFrame(data.frame(id = as.character(tows$id2)))
   sp@data <- cbind(sp@data, tows)
   stadlar.rallstodvar.sp <- sp
 
@@ -380,8 +380,8 @@ munge_for_smxapp <- function(res, cruise, rda.file = "smb_dashboard.rda") {
   x <- data.frame(id2 = x1$id2, lon = x1$value, lat = x2$value)
   lines_list <- list()
   for (i in 1:max(tows$id2)) {
-    x2 <- Line(x[x$id2 == i,c("lon","lat")])
-    lines_list[[i]] <- Lines(list(x2),ID=as.character(tows$id2[i]))
+    x2 <- sp::Line(x[x$id2 == i,c("lon","lat")])
+    lines_list[[i]] <- sp::Lines(list(x2),ID=as.character(tows$id2[i]))
   }
   sp <-
     lines_list %>%
