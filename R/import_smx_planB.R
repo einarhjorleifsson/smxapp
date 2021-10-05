@@ -19,6 +19,7 @@ import_smx_planB <- function(id = 30, gid = 73, year, store = FALSE) {
     now.year <- year
   }
 
+
   con <- DBI::dbConnect(DBI::dbDriver('Oracle'),
                         user = "hafvog_user",
                         password = "hafvog",
