@@ -348,11 +348,11 @@ munge_for_smxapp <- function(res, cruise, rda.file = "smb_dashboard.rda") {
   x1 <-
     tows %>%
     dplyr::select(id2, kastad_v, hift_v) %>%
-    dplyr::gather(variable, value, -id2)
+    tidyr::gather(variable, value, -id2)
   x2 <-
     tows %>%
     dplyr::select(id2, kastad_n, hift_n) %>%
-    dplyr::gather(variable, value, -id2)
+    tidyr::gather(variable, value, -id2)
   x <- data.frame(id2 = x1$id2, lon = x1$value, lat = x2$value)
   lines_list <- list()
   for (i in 1:max(tows$id2)) {
