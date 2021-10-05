@@ -5,45 +5,45 @@ runtime: shiny
 ---
 
 ```{r, eval = FALSE}
-# NOTE: I may sometimes make/need to make update of the xe- and the smxapp-package.
-# To install the first time/or at any time an update is made you should run this
-# code below (your need to temporary remove the "#" sign
-#devtools::install_github("fishvice/xe", dependencies = FALSE)
-#devtools::install_github("einarhjorleifsson/smxapp", dependencies = FALSE)
+# ------------------------------------------------------------------------------
+# INSTALLATIONS - YOU ONLY NEED TO DO THIS ONCE (ONCE IN A WHILE)
+# The dbplyr package -----------------------------------------------------------
+#   XE grunnurinn er Oracle 11g og því er ekki hægt að nota dbplyr útgáfur >2.0
+#    Því verður að setja inn eldri útgáfu af dbplyr. Til að skemma ekki 
+#    vinnuflæðið í landi (þ.e. þegar menn tengja sig við miðlæga Oracle 
+#    grunninn (sem þurfa dbplyr útgáfur 2.0 og nýrri) þá setjum við eldri
+#    útgáfuna af dbplyr á sérstakan stað, hér upp á Desktop
+remotes::install_github("tidyverse/dbplyr@v1.4.4", 
+                        # breyta 'einarhj' í þitt notendanafn 
+                        lib.loc = "C:/Users/einarhj/Desktop")
+# NOTE: This means that one can not load the tidyverse package only its
+#       child packages (dplyr, ggplot2, tidyr, tibble, ....)
 
+# The usual package ------------------------------------------------------------
+#  Just do:
+devtools::install_github("fishvice/xe", dependencies = FALSE)
+devtools::install_github("einarhjorleifsson/smxapp", dependencies = FALSE)
+```
 
-# NOTE: In the line above it says eval = FALSE. This means that when you 
-#       "Run Document" this code chunk will not be executed
-#       
-#       You only want to run the code if you have added more tows to Hafvog,
-#       or if new versions of xe- and smxapp-packages have been made (will
-#       inform the contemoraneous smx cruise leaders if/when that occurs via
-#       e-mail).
-
-library(tidyverse)
-library(lubridate)
-library(sp)
+```{r, eval = FALSE}
+# NOTE: Í línunni hér að ofan höfum við 'eval = FALSE'. Það þýðir að þegar þú
+#       keyrir 'Run Document' þá er þessi kóðabútur ekki keyrður. Þú keyrir
+#       þennan kóðabút eingöngu ef að það eru komnar nýjar upplýsingar í hafvog
+#       sem þú vilt hafa með í smxapp skoðuninni.
+library(DBI)
 library(ROracle)
+# replace 'einarhj' with your username here (as done above)
+library(dbplyr, lib.loc = "C:/Users/einarhj/Desktop")
 library(smxapp)
 
 # Specify the synaflokkur using the id and the gear using the gid. E.g.:
 #         id   gid
 # SMB     30    73
 # SMH     35    77, 78
-# The default below applies to SMB
-
-res <- import_smx_planB(id = 30, gid = c(73))
-
-# Note, from the above code we could proceed with scutinizing the data. The object
-#   res is a list of dataframes and then some lists (names can be viewed by names(res))
-#
-#   If you are only interested in using the smxapp the next step does some
-#   standardization of data, bootsrapping and other things
-#   The function ends by generating a data-binary file (data2/smb_dashboard.rda)
-#   that is loaded (see load("data2/smb_dashboard.rda") in the next chunk
-#   when the "Run Document" is pressed
-# The cruise argument below can be changed. E.g. if on only wants to look at the
-# data for Ljósafell 2019 then the argument would simply be cruise = c("TL1-2019")
+# The default below applies to SMB (for SMH change to 
+#     res <- xe::import_smx(id = 35, gid = c(77, 78))
+res <- xe::import_smx(id = 30, gid = c(73))
+# Here specify whatever cruise(s) you want to include in the overview
 munge_for_smxapp(res, cruise = c("B4-2021"))
 ```
 
@@ -56,10 +56,8 @@ library(htmltools)
 library(DT)
 library(sf)
 load("data2/smb_dashboard.rda")
-#load("~/ShinyApps/smbfyrirkongenekkiprest/data2/smb_dashboard.rda")
 pp <- 
   read_rds("data2/pp.rds") %>% 
-  #read_rds("~/ShinyApps/smbfyrirkongenekkiprest/data2/pp.rds") %>% 
   mutate(m.thyngd = round(thyngd/n, 2))
 pp2 <- 
   pp %>% 
@@ -85,7 +83,6 @@ names(my.species) <- x$val
 x <- st %>% filter(ar == now.year) %>% select(leidangur) %>% distinct()
 my.cruises <- as.list(x$leidangur)
 names(my.cruises) <- x$leidangur
-# For debugging input <- data_frame(Species = 1, Type = "Numbers")
 
 index.done.cruise <-
   tibble(index = index.done) %>% 
