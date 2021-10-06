@@ -54,8 +54,7 @@ munge_for_smxapp <- function(res, cruise, rda.file = "smb_dashboard.rda") {
 
   print("read stations from external file")
   tows.external <-
-    readr::read_csv(file=paste0(path.package("smxapp"),"/csv/stations_smh.csv"),
-                    show_col_types = FALSE) %>%
+    readr::read_csv(file=paste0(path.package("smxapp"),"/csv/stations_smh.csv")) %>%
     tibble::as_tibble() %>%
     dplyr::rename(gid = vid) %>%
     dplyr::mutate(lon1 = -gisland::geo_convert(lon1),
